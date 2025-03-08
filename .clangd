@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: ["-march=rv32imafdc_zicsr_zicond_zifencei", "-mabi=ilp32", "-Wall"]

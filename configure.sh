@@ -1,0 +1,1 @@
+xmake f -a rv32im_zicond_zifencei -m $1
