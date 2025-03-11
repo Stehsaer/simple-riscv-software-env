@@ -39,18 +39,60 @@
 #define CT_SDC 0x06   /* SD */
 #define CT_BLOCK 0x08 /* Block addressing */
 
+#ifdef FS_CFG_READONLY
+#define _USE_WRITE 0
+#else
 #define _USE_WRITE 1
+#endif
 
 namespace driver::sd
 {
+	struct Card_info
+	{
+		enum Type
+		{
+			MMC,
+			SD1,
+			SD2,
+		} type = SD2;
+
+		bool block_addressing = false;
+		bool write_protected = false;
+		bool powered = false;
+		bool initialized = false;
+	};
+
+	enum class Error_code
+	{
+		OK = 0,
+
+		Read_wait_busy_timeout,
+		Write_wait_busy_timeout,
+
+		Read_single_cmd17_failed,
+		Read_multiple_cmd18_failed,
+
+		Write_single_cmd24_failed,
+		Write_multiple_cmd25_failed,
+
+		Write_single_wait_respond_timeout,
+		Write_multiple_wait_respond_timeout,
+
+		Write_single_busy_timeout,
+		Write_multiple_busy_timeout,
+	};
+
+	extern Error_code err;
+	extern Card_info card_info;
+
+	std::optional<uint16_t> query_sd_state();
+
 	//-----[ Prototypes For All User External Functions ]-----
 	DSTATUS disk_initialize(BYTE pdrv);
 	DSTATUS disk_status(BYTE pdrv);
 	DRESULT disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
 	DRESULT disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
 	DRESULT disk_ioctl(BYTE drv, BYTE ctrl, void* buff);
-
-	void reset_sd_library();
 
 	//-----[ User IO ]-----
 
@@ -68,7 +110,7 @@ namespace driver::sd
 		void spi_tx_byte(uint8_t data);
 
 		/* SPI transmit buffer */
-		void spi_tx_buffer(uint8_t* buffer, uint16_t len);
+		void spi_tx_buffer(const uint8_t* buffer, uint16_t len);
 
 		/* SPI receive a byte */
 		uint8_t spi_rx_byte();
@@ -88,6 +130,10 @@ namespace driver::sd
 		DRESULT disk_read(BYTE* buff, LBA_t sector, UINT count) override { return driver::sd::disk_read(0, buff, sector, count); }
 		DRESULT disk_write(const BYTE* buff, LBA_t sector, UINT count) override
 		{
+#ifdef FS_CFG_READONLY
+			return RES_WRPRT;
+#endif
+
 			return driver::sd::disk_write(0, buff, sector, count);
 		}
 		DRESULT disk_ioctl(BYTE cmd, void* buff) override { return driver::sd::disk_ioctl(0, cmd, buff); }

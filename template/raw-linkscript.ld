@@ -1,7 +1,7 @@
 /* Edit the sections to match the platform */
 
 FLASH_BASE = 0x00100000;
-FLASH_LENGTH = 1M;
+FLASH_LENGTH = 128K;
 
 RAM_BASE = 0x80000000;
 RAM_SIZE = 2048M;

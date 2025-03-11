@@ -11,7 +11,7 @@ namespace platform_v1
 	extern volatile device::SPI& spi_sd;
 	extern const uint64_t frequency;
 
-	uint64_t get_ticks();
+	uint64_t get_us();
 }
 
 extern "C"
