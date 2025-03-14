@@ -396,8 +396,8 @@ int main()
 			const auto result = load_file(args[0].c_str());
 
 			std::vector<char*> argv;
-			for (size_t i = 1; i < args.size(); i++) argv.push_back(const_cast<char*>(args[i].c_str()));
-			argv.push_back(nullptr);
+			argv.reserve(args.size());
+			for (const auto& arg : args) argv.push_back(const_cast<char*>(arg.c_str()));
 
 			if (result.has_value())
 			{

@@ -196,7 +196,7 @@ int main()
 	{
 		// STBI
 		int width, height, channels;
-		const auto stbi_data = stbi_load_from_memory(jpeg_data.data(), jpeg_data.size(), &width, &height, &channels, 3);
+		auto* const stbi_data = stbi_load_from_memory(jpeg_data.data(), jpeg_data.size(), &width, &height, &channels, 3);
 
 		if (stbi_data == nullptr)
 		{
