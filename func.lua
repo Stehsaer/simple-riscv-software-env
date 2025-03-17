@@ -29,5 +29,6 @@ function generate_qemu_flash(target)
 end
 
 function run_target_qemu(target) 
-	os.exec("qemu-system-riscv32 -M virt -cpu rv32,zicond=true -nographic -bios none -drive file=\"" .. target:targetfile() .. ".bin\",format=raw,if=pflash -S -s -m 2G")
+    local run_str = "qemu-system-riscv32 -M virt -cpu rv32,zicond=true -nographic -bios none -drive file=\"" .. target:targetfile() .. ".bin\",format=raw,if=pflash -m 2G"
+	os.exec(run_str)
 end
