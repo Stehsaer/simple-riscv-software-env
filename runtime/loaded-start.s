@@ -12,6 +12,8 @@ _start:
 	sw ra, 8(sp)
 	sw gp, 12(sp)
 	sw tp, 16(sp)
+	sw a0, 20(sp)
+	sw a1, 24(sp)
 
 	# Initialize thread pointer
 	la tp, _thread_pointer_init
@@ -61,8 +63,9 @@ _start:
 
 	cpp_ctor_end:
 
-	li a0, 0 # argc = 0
-	li a1, 0 # argv = (void*)0
+	# Call main
+	lw a0, 20(sp)
+	lw a1, 24(sp)
 	call main
 
 	# Execute DTOR

@@ -108,16 +108,29 @@ namespace driver::fat32
 
 	error_t Device::unlink(std::string_view path) noexcept
 	{
+#ifdef FS_CFG_READONLY
+		return EROFS;
+#endif
+
 		return convert_fat32_errcode(f_unlink(path.data()));
 	}
 
 	error_t Device::link(std::string_view oldname, std::string_view newname) noexcept
 	{
+#ifdef FS_CFG_READONLY
+		return EROFS;
+#endif
+
 		return convert_fat32_errcode(f_rename(oldname.data(), newname.data()));
 	}
 
 	int Device::rename(std::string_view oldpath, std::string_view newpath) noexcept
 	{
+#ifdef FS_CFG_READONLY
+		errno = EROFS;
+		return -1;
+#endif
+
 		const auto result = f_rename(oldpath.data(), newpath.data());
 		if (result != FR_OK)
 		{
@@ -172,6 +185,11 @@ namespace driver::fat32
 
 	ssize_t Device::Fd::write(const void* buf, size_t count) noexcept
 	{
+#ifdef FS_CFG_READONLY
+		errno = EROFS;
+		return -1;
+#endif
+
 		UINT write_count;
 		const auto result = f_write(&file, buf, count, &write_count);
 
@@ -191,6 +209,11 @@ namespace driver::fat32
 
 	int Device::Fd::ftruncate(off_t length) noexcept
 	{
+#ifdef FS_CFG_READONLY
+		errno = EROFS;
+		return -1;
+#endif
+
 		const auto result = f_truncate(&file);
 
 		if (result != FR_OK)
@@ -204,6 +227,11 @@ namespace driver::fat32
 
 	int Device::Fd::fsync() noexcept
 	{
+#ifdef FS_CFG_READONLY
+		errno = EROFS;
+		return -1;
+#endif
+
 		const auto result = f_sync(&file);
 		if (result != FR_OK)
 		{

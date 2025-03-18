@@ -1,8 +1,8 @@
 set_config("ccprefix", "riscv64-unknown-elf")
-set_config("branch_cost", 5)
+-- set_config("branch_cost", 5)
 set_config("nano_libc", false)
 
-toolchain("riscv")
+toolchain("riscv-gcc")
 
     set_kind('standalone')
 
@@ -93,7 +93,7 @@ toolchain("riscv")
         -- C/C++ Compiler arguments
         add_cxflags('-march=' .. get_config('arch'))
         add_cxflags('-mabi=ilp32')
-        add_cxflags('-mbranch-cost=' .. tostring(branch_cost))
+        -- add_cxflags('-mbranch-cost=' .. tostring(branch_cost))
 		add_cxflags('-ffunction-sections -fdata-sections -fomit-frame-pointer')
 
         -- Get compiler binary path
@@ -135,4 +135,5 @@ toolchain("riscv")
         add_ldflags('--oformat elf32-littleriscv --gc-sections -(')
         
     end)
+
 toolchain_end()

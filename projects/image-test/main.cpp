@@ -16,6 +16,7 @@
 
 #include <jpeglib.h>
 
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 const char* fresult_string[]
@@ -130,7 +131,6 @@ int main()
 
 	for (int i = 0; i < 10; i++)
 	{
-		driver::sd::reset_sd_library();
 		if (driver::fat32::mount_disk().has_value())
 		{
 			printf("Disk mount failed. Retrying %d/10\n", i + 1);
@@ -159,16 +159,66 @@ int main()
 
 	platform_v1::sd::set_speed(25000);
 
-	auto img = Image(2560, 1440);
-
-	for (int y = 0; y < img.height; ++y)
+	// Reading image
+	std::println("Reading image...");
+	const auto read_start_time = clock();
+	std::vector<uint8_t> jpeg_data;
 	{
-		for (int x = 0; x < img.width; ++x)
+		auto* file = fopen("sd:/test.png", "r");
+		if (file == nullptr)
 		{
-			img[x, y].r = static_cast<uint8_t>(std::clamp<uint32_t>(x * 255 / img.width, 0, 255));
-			img[x, y].g = static_cast<uint8_t>(std::clamp<uint32_t>(y * 255 / img.height, 0, 255));
-			img[x, y].b = 0;
+			printf("Failed to open file\n");
+			return 1;
 		}
+
+		fseek(file, 0, SEEK_END);
+		const size_t file_size = ftell(file);
+		fseek(file, 0, SEEK_SET);
+
+		jpeg_data.resize(file_size);
+		const auto read = fread(jpeg_data.data(), 1, file_size, file);
+
+		if (read != file_size)
+		{
+			printf("Failed to read file\n");
+			return 1;
+		}
+
+		fclose(file);
+
+		std::println("Reading Done in {} ms", (clock() - read_start_time) * 1000 / CLOCKS_PER_SEC);
+		std::println("Input JPG size: {} bytes", jpeg_data.size());
+	}
+
+	std::println("Decoding image...");
+	std::unique_ptr<Image> image;
+	const auto decode_start_time = clock();
+	{
+		// STBI
+		int width, height, channels;
+		auto* const stbi_data = stbi_load_from_memory(jpeg_data.data(), jpeg_data.size(), &width, &height, &channels, 3);
+
+		if (stbi_data == nullptr)
+		{
+			printf("Failed to decode image\n");
+			return 1;
+		}
+
+		image = std::make_unique<Image>(width, height);
+
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				const auto* pixel = stbi_data + (y * width + x) * 3;
+				(*image)[x, y] = {pixel[0], pixel[1], pixel[2]};
+			}
+		}
+
+		stbi_image_free(stbi_data);
+
+		std::println("Decoding Done in {} ms", (clock() - decode_start_time) * 1000 / CLOCKS_PER_SEC);
+		std::println("Image size: {}x{}", image->width, image->height);
 	}
 
 	std::println("Encoding JPG...");
@@ -188,8 +238,8 @@ int main()
 
 		jpeg_mem_dest(&cinfo, &out_buffer, &out_size);
 
-		cinfo.image_width = img.width;
-		cinfo.image_height = img.height;
+		cinfo.image_width = image->width;
+		cinfo.image_height = image->height;
 		cinfo.input_components = 3;
 		cinfo.in_color_space = JCS_RGB;
 
@@ -202,7 +252,12 @@ int main()
 
 		while (cinfo.next_scanline < cinfo.image_height)
 		{
-			row_pointer[0] = (JSAMPROW)&img[0, cinfo.next_scanline];
+			if (cinfo.next_scanline % 100 == 0)
+			{
+				std::println("Encoding... {}/{}", cinfo.next_scanline, cinfo.image_height);
+			}
+
+			row_pointer[0] = (JSAMPROW) & (*image)[0, cinfo.next_scanline];
 			jpeg_write_scanlines(&cinfo, row_pointer, 1);
 		}
 
@@ -212,34 +267,97 @@ int main()
 		encoded_data.assign(out_buffer, out_buffer + out_size);
 
 		free(out_buffer);
-		std::println("Encoding Done in {} ms", (clock() - encode_start_time) * 1000 / CLOCKS_PER_SEC);
+		std::println("Encoding Done in {} ms", (uint64_t)(clock() - encode_start_time) * 1000 / CLOCKS_PER_SEC);
 		std::println("Output JPG size: {} bytes", encoded_data.size());
 	}
 
 	std::println("Writing to disk...");
-	auto* file = fopen("sd:/out.jpg", "w+b");
-	if (file == nullptr)
 	{
-		printf("Failed to open file\n");
-		return 2;
+		auto* file = fopen("sd:/out13.jpg", "w");
+		if (file == nullptr)
+		{
+			printf("Failed to open file\n");
+			return 2;
+		}
+
+		fseek(file, 0, SEEK_SET);
+		const size_t write_size = encoded_data.size();
+		const auto actual_write = fwrite(encoded_data.data(), 1, write_size, file);
+
+		if (actual_write != write_size)
+		{
+			printf(
+				"Failed to write file, expected %zu bytes, written %zu bytes; errno=%d, FRESULT=%s\n",
+				write_size,
+				actual_write,
+				errno,
+				fresult_string[driver::fat32::last_failure]
+			);
+		}
+
+		fclose(file);
+		std::println("Writing done");
 	}
 
-	const size_t write_size = encoded_data.size();
-	const auto actual_write = fwrite(encoded_data.data(), 1, write_size, file);
-
-	if (actual_write != write_size)
+	std::println("Read back and check...");
 	{
-		printf(
-			"Failed to write file, expected %d bytes, written %d bytes; errno=%d, FRESULT=%s\n",
-			write_size,
-			actual_write,
-			errno,
-			fresult_string[driver::fat32::last_failure]
-		);
-	}
+		auto* file = fopen("sd:/out13.jpg", "r");
+		if (file == nullptr)
+		{
+			printf("Failed to open file\n");
+			return 1;
+		}
 
-	fclose(file);
-	std::println("Writing done");
+		fseek(file, 0, SEEK_END);
+		const size_t file_size = ftell(file);
+		fseek(file, 0, SEEK_SET);
+
+		std::vector<uint8_t> read_back_data(file_size);
+		const auto read = fread(read_back_data.data(), 1, file_size, file);
+
+		if (read != file_size)
+		{
+			printf("Failed to read file\n");
+			return 1;
+		}
+
+		fclose(file);
+
+		if (read_back_data.size() != encoded_data.size())
+		{
+			printf("Read back size mismatch\n");
+			return 1;
+		}
+
+		for (size_t i = 0; i < read_back_data.size(); i++)
+		{
+			if (read_back_data[i] != encoded_data[i])
+			{
+				printf("Read back data mismatch at %zu\n", i);
+
+				const auto min_idx = std::max(0, (int)i - 10);
+				const auto max_idx = std::min<int>((int)read_back_data.size(), i + 10);
+
+				printf("Expected: ");
+				for (int j = min_idx; j < max_idx; j++)
+				{
+					printf("%02X ", encoded_data[j]);
+				}
+				printf("\n");
+
+				printf("Actual:   ");
+				for (int j = min_idx; j < max_idx; j++)
+				{
+					printf("%02X ", read_back_data[j]);
+				}
+				printf("\n");
+
+				return 1;
+			}
+		}
+
+		std::println("Read back and check done");
+	}
 
 	driver::fat32::unmount_disk();
 

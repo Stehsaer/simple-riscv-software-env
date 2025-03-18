@@ -12,20 +12,19 @@
 
 namespace driver::sd
 {
-	static volatile DSTATUS stat = STA_NOINIT; /* Disk Status */
-	static uint8_t card_type;                  /* Type 0:MMC, 1:SDC, 2:Block addressing */
-	static uint8_t power_flag = 0;             /* Power flag */
+	namespace config
+	{
+		static constexpr auto wait_busy_timeout_us = 2'000'000u;
+	}
 
-	//-----[ SD Card Functions ]-----
-
-	class Timer
+	class Timeout
 	{
 		uint32_t start;
 		uint32_t timeout;
 
 	  public:
 
-		Timer(uint32_t timeout_us) :
+		Timeout(uint32_t timeout_us) :
 			start(userio::get_clock()),
 			timeout(timeout_us)
 		{
@@ -34,74 +33,74 @@ namespace driver::sd
 		bool wait() const { return userio::get_clock() - start < timeout; }
 	};
 
-	void reset_sd_library()
-	{
-		stat = STA_NOINIT;
-		power_flag = 0;
-	}
+	Error_code err = Error_code::OK;
 
-	/* wait SD ready */
-	static uint8_t ready_wait()
+	Card_info card_info = {};
+
+	// Wait for SD card to be ready
+	// -- Returns: `true` if ready, `false` if timeout
+	static bool ready_wait()
 	{
 		uint8_t res;
-		/* timeout 500ms */
-		Timer timer(500000);
-		/* if SD goes ready, receives 0xFF */
+
+		Timeout timer(500000);
+
 		do {
 			res = userio::spi_rx_byte();
 		} while ((res != 0xFF) && timer.wait());
-		return res;
+
+		return res == 0xFF;
 	}
 
-	/* power on */
-	static void power_on()
+	// Power On SD Card
+	// -- Returns: `false` if failed, `true` if succeeded
+	static bool power_on()
 	{
-		uint8_t args[6];
-		uint32_t cnt = 0x1FFF;
-		/* transmit bytes to wake up */
+		uint8_t args[6] = {CMD0, 0, 0, 0, 0, 0x95};
+
 		userio::deselect();
-		for (int i = 0; i < 10; i++)
-		{
-			userio::spi_tx_byte(0xFF);
-		}
-		/* slave select */
+
+		// 10*8=80 dummy clocks to wakeup
+		for (auto i = 0u; i < 10; i++) userio::spi_tx_byte(0xFF);
+
 		userio::select();
-		/* make idle state */
-		args[0] = CMD0; /* CMD0:GO_IDLE_STATE */
-		args[1] = 0;
-		args[2] = 0;
-		args[3] = 0;
-		args[4] = 0;
-		args[5] = 0x95;
-		userio::spi_tx_buffer(args, sizeof(args));
-		/* wait response */
-		while ((userio::spi_rx_byte() != 0x01) && cnt)
+
+		// GO_IDLE_STATE: CMD0, 0, 0, 0, 0, 0x95
+		userio::spi_tx_buffer(args, 6);
+
+		// Wait for 0x01 response
+		for (auto i = 0u; i < 32768; i++)
 		{
-			cnt--;
+			if (userio::spi_rx_byte() == 0x01) break;
+
+			// Timeout
+			if (i == 32767)
+			{
+				card_info.powered = false;
+				userio::deselect();
+				return false;
+			}
 		}
+
 		userio::deselect();
 		userio::spi_tx_byte(0XFF);
-		power_flag = 1;
+
+		card_info.powered = true;
+		return true;
 	}
 
-	/* power off */
+	// Power OFF SD Card
 	static void power_off()
 	{
-		power_flag = 0;
-	}
-
-	/* check power flag */
-	static uint8_t check_power()
-	{
-		return power_flag;
+		card_info.powered = false;
 	}
 
 	/* receive data block */
-	static bool rx_data_block(BYTE* buff, UINT len)
+	static bool rx_data_block(uint8_t* buff, UINT len)
 	{
 		uint8_t token;
 		/* timeout 200ms */
-		Timer timer(200000);
+		Timeout timer(200000);
 		/* loop until receive a response or timeout */
 		do {
 			token = userio::spi_rx_byte();
@@ -118,274 +117,399 @@ namespace driver::sd
 
 /* transmit data block */
 #if _USE_WRITE == 1
-	static bool tx_data_block(const uint8_t* buff, BYTE token)
+	static bool tx_data_block(const uint8_t* buff, uint8_t token)
 	{
 		uint8_t resp;
 		uint8_t i = 0;
 
 		/* wait SD ready */
-		if (ready_wait() != 0xFF) return false;
+		if (!ready_wait()) return false;
 
 		/* transmit token */
 		userio::spi_tx_byte(token);
 
-		/* if it's not STOP token, transmit data */
-		if (token != 0xFD)
+		userio::spi_tx_buffer((uint8_t*)buff, 512);
+
+		/* discard CRC */
+		userio::spi_rx_byte();
+		userio::spi_rx_byte();
+
+		/* receive response */
+		while (i <= 64)
 		{
-			userio::spi_tx_buffer((uint8_t*)buff, 512);
-
-			/* discard CRC */
-			userio::spi_rx_byte();
-			userio::spi_rx_byte();
-
-			/* receive response */
-			while (i <= 64)
-			{
-				resp = userio::spi_rx_byte();
-				/* transmit 0x05 accepted */
-				if ((resp & 0x1F) == 0x05) break;
-				i++;
-			}
-
-			/* recv buffer clear */
-			while (userio::spi_rx_byte() == 0);
-
-			return (resp & 0x1F) == 0x05;
+			resp = userio::spi_rx_byte();
+			/* transmit 0x05 accepted */
+			if ((resp & 0x1F) == 0x05) break;
+			i++;
 		}
-		else
-		{
-			/* recv buffer clear */
-			while (userio::spi_rx_byte() == 0);
-			return true;
-		}
+
+		/* recv buffer clear */
+		while (userio::spi_rx_byte() == 0);
+
+		return (resp & 0x1F) == 0x05;
 	}
 #endif /* _USE_WRITE */
 
-	/* transmit command */
-	static BYTE send_cmd(BYTE cmd, uint32_t arg)
+	// Transmit a command to SD card
+	// -- Returns: Response uint8_t
+	static uint8_t send_cmd(uint8_t cmd, uint32_t arg)
 	{
-		uint8_t crc, res;
+		// Wait for SD card to be ready
+		if (!ready_wait()) return 0xFF;
 
-		/* wait SD ready */
-		if (ready_wait() != 0xFF) return 0xFF;
+		uint8_t send_data[6] = {cmd, (uint8_t)(arg >> 24), (uint8_t)(arg >> 16), (uint8_t)(arg >> 8), (uint8_t)arg};
 
-		/* transmit command */
-		userio::spi_tx_byte(cmd);                  /* Command */
-		userio::spi_tx_byte((uint8_t)(arg >> 24)); /* Argument[31..24] */
-		userio::spi_tx_byte((uint8_t)(arg >> 16)); /* Argument[23..16] */
-		userio::spi_tx_byte((uint8_t)(arg >> 8));  /* Argument[15..8] */
-		userio::spi_tx_byte((uint8_t)arg);         /* Argument[7..0] */
-
-		/* prepare CRC */
 		if (cmd == CMD0)
-			crc = 0x95; /* CRC for CMD0(0) */
+			send_data[5] = 0x95;
 		else if (cmd == CMD8)
-			crc = 0x87; /* CRC for CMD8(0x1AA) */
+			send_data[5] = 0x87;
 		else
-			crc = 1;
+			send_data[5] = 0x01;
 
-		/* transmit CRC */
-		userio::spi_tx_byte(crc);
+		// Transmit command
+		userio::spi_tx_buffer(send_data, 6);
 
-		/* Skip a stuff byte when STOP_TRANSMISSION */
+		// When CMD12, skip a dummy uint8_t
 		if (cmd == CMD12) userio::spi_rx_byte();
 
-		/* receive response */
-		uint8_t n = 10;
-		do {
-			res = userio::spi_rx_byte();
-		} while ((res & 0x80) && --n);
+		// Wait for NCR (No response)
+		for (auto i = 0u; i < 65536; i++)
+		{
+			uint8_t res = userio::spi_rx_byte();
+			if (!(res & 0x80)) return res;
+		}
 
-		return res;
+		return 0xFF;
+	}
+
+	std::optional<uint16_t> query_sd_state()
+	{
+		userio::select();
+
+		if (!ready_wait())
+		{
+			userio::deselect();
+			return std::nullopt;
+		}
+
+		uint8_t resp_h = send_cmd(CMD13, 0);
+		uint8_t resp_l = userio::spi_rx_byte();
+
+		userio::deselect();
+		userio::spi_rx_byte();
+
+		if ((resp_h & 0x80) != 0) return std::nullopt;
+
+		return (resp_h << 8) | resp_l;
+	}
+
+	static bool wait_byte(uint8_t byte, uint32_t timeout_us = 200'000)
+	{
+		Timeout timeout(timeout_us);
+
+		while (timeout.wait())
+			if (userio::spi_rx_byte() == byte) return true;
+
+		return false;
+	}
+
+	static bool read_single_block(uint8_t* buff, uint32_t sector)
+	{
+		if (send_cmd(CMD17, sector) != 0)
+		{
+			err = Error_code::Read_single_cmd17_failed;
+			return false;
+		}
+
+		if (!wait_byte(0xFE, config::wait_busy_timeout_us))
+		{
+			err = Error_code::Read_wait_busy_timeout;
+			return false;
+		}
+
+		userio::spi_rx_buffer(buff, 512);
+
+		// Discard CRC
+		userio::spi_rx_byte();
+		userio::spi_rx_byte();
+
+		return true;
+	}
+
+	static bool read_multiple_block(uint8_t* buff, uint32_t sector, uint32_t count)
+	{
+		if (send_cmd(CMD18, sector) != 0)
+		{
+			err = Error_code::Read_multiple_cmd18_failed;
+			return false;
+		}
+
+		for (auto i = 0u; i < count; i++)
+		{
+			if (!wait_byte(0xFE, config::wait_busy_timeout_us))
+			{
+				err = Error_code::Read_wait_busy_timeout;
+				return false;
+			}
+
+			userio::spi_rx_buffer(buff, 512);
+
+			// Discard CRC
+			userio::spi_rx_byte();
+			userio::spi_rx_byte();
+
+			buff += 512;
+		}
+
+		// Stop transmission
+		send_cmd(CMD12, 0);
+
+		return true;
+	}
+
+	static bool write_single_block(const uint8_t* buff, uint32_t sector)
+	{
+		if (auto ret = send_cmd(CMD24, sector); ret != 0)
+		{
+			err = Error_code::Write_single_cmd24_failed;
+			return false;
+		}
+
+		// Wait for 0xFF response (not busy, ready to accept data)
+		if (!wait_byte(0xFF, config::wait_busy_timeout_us))
+		{
+			err = Error_code::Write_wait_busy_timeout;
+			return false;
+		}
+
+		userio::spi_tx_byte(0xFE);         // prefix 0xFE
+		userio::spi_tx_buffer(buff, 512);  // Actual data
+
+		if (![]
+			{
+				Timeout timeout(config::wait_busy_timeout_us);
+				while (timeout.wait())
+					if ((userio::spi_rx_byte() & 0x1F) == 0x05) return true;
+
+				return false;
+			}())
+		{
+			// Terminate transmission
+			send_cmd(CMD12, 0);
+			err = Error_code::Write_single_wait_respond_timeout;
+			return false;
+		}
+
+		// 1s timeout
+		if (!wait_byte(0xFF, config::wait_busy_timeout_us))
+		{
+			err = Error_code::Write_single_busy_timeout;
+			return false;
+		}
+
+		return true;
+	}
+
+	static bool write_multiple_block(const uint8_t* buff, uint32_t sector, uint32_t count)
+	{
+		if (auto ret = send_cmd(CMD25, sector); ret != 0)
+		{
+			err = Error_code::Write_multiple_cmd25_failed;
+			return false;
+		}
+
+		for (auto i = 0u; i < count; i++)
+		{
+			// Wait for 0xFF response
+			if (!wait_byte(0xFF, config::wait_busy_timeout_us))
+			{
+				err = Error_code::Write_wait_busy_timeout;
+				return false;
+			}
+
+			userio::spi_tx_byte(0xFC);         // prefix 0xFC
+			userio::spi_tx_buffer(buff, 512);  // Actual data
+			buff += 512;
+
+			if (![]
+				{
+					Timeout timeout(config::wait_busy_timeout_us);
+					while (timeout.wait())
+						if ((userio::spi_rx_byte() & 0x1F) == 0x05) return true;
+					return false;
+				}())
+			{
+				// Terminate transmission
+				send_cmd(CMD12, 0);
+				err = Error_code::Write_multiple_wait_respond_timeout;
+				return false;
+			}
+
+			// 1s timeout
+			if (!wait_byte(0xFF, config::wait_busy_timeout_us))
+			{
+				err = Error_code::Write_multiple_busy_timeout;
+				return false;
+			}
+
+			if (i == count - 1) userio::spi_tx_byte(0xFD);  // Stop transmission
+		}
+
+		return true;
 	}
 
 	//-----[ user_diskio.c Functions ]-----
 
 	/* initialize SD */
-	DSTATUS disk_initialize(BYTE drv)
+	DSTATUS disk_initialize(uint8_t drv)
 	{
-		uint8_t n, type, ocr[4];
-		/* single drive, drv should be 0 */
-		if (drv) return STA_NOINIT;
-		/* no disk */
-		if (stat & STA_NODISK) return stat;
-		/* power on */
-		power_on();
-		/* slave select */
-		userio::select();
-		/* check disk type */
-		type = 0;
-		/* send GO_IDLE_STATE command */
-		if (send_cmd(CMD0, 0) == 1)
+		card_info = {};
+
+		if (drv != 0) return STA_NOINIT;     // Only accepts drive 0
+		if (!power_on()) return STA_NOINIT;  // Power on failed
+
+		struct SPI_guard
 		{
-			/* timeout 1 sec */
-			Timer timer(1000000);
-			/* SDC V2+ accept CMD8 command, http://elm-chan.org/docs/mmc/mmc_e.html */
-			if (send_cmd(CMD8, 0x1AA) == 1)
+			SPI_guard() { userio::select(); }
+
+			~SPI_guard()
 			{
-				/* operation condition register */
-				for (n = 0; n < 4; n++)
-				{
-					ocr[n] = userio::spi_rx_byte();
-				}
-				/* voltage range 2.7-3.6V */
-				if (ocr[2] == 0x01 && ocr[3] == 0xAA)
-				{
-					/* ACMD41 with HCS bit */
-					do {
-						if (send_cmd(CMD55, 0) <= 1 && send_cmd(CMD41, 1UL << 30) == 0) break;
-					} while (timer.wait());
+				userio::deselect();
+				userio::spi_rx_byte();
+			}
+		} guard;
 
-					/* READ_OCR */
-					if (timer.wait() && send_cmd(CMD58, 0) == 0)
-					{
-						/* Check CCS bit */
-						for (n = 0; n < 4; n++)
-						{
-							ocr[n] = userio::spi_rx_byte();
-						}
+		// GO_IDLE_STATE
+		if (send_cmd(CMD0, 0) != 1)  // Initialization failed
+			return STA_NOINIT;
 
-						/* SDv2 (HC or SC) */
-						type = (ocr[0] & 0x40) ? CT_SD2 | CT_BLOCK : CT_SD2;
-					}
+		// Detect version
+		if (send_cmd(CMD8, 0x1AA) == 1) [[likely]]
+		{
+			// SDC V2+
+			Timeout timeout(1000000);
+
+			// Get OCR
+			uint8_t ocr[4];
+			userio::spi_rx_buffer(ocr, 4);
+
+			// 2.7~3.6V Not supported
+			if (ocr[2] != 0x01 || ocr[3] != 0xAA) return STA_NOINIT;
+
+			// ACMD41 with HCS bit (?)
+			do {
+				if (send_cmd(CMD55, 0) <= 1 && send_cmd(CMD41, 1UL << 30) == 0) break;
+			} while (timeout.wait());
+
+			while (true)
+			{
+				if (!timeout.wait()) return STA_NOINIT;
+				if (auto ret = send_cmd(CMD58, 0); ret == 0)
+					break;
+				else
+				{
+					userio::spi_rx_byte();
+					userio::spi_rx_byte();
+					userio::spi_rx_byte();
+					userio::spi_rx_byte();
 				}
 			}
-			else
-			{
-				/* SDC V1 or MMC */
-				type = (send_cmd(CMD55, 0) <= 1 && send_cmd(CMD41, 0) <= 1) ? CT_SD1 : CT_MMC;
-				do {
-					if (type == CT_SD1)
-					{
-						if (send_cmd(CMD55, 0) <= 1 && send_cmd(CMD41, 0) == 0) break; /* ACMD41 */
-					}
-					else
-					{
-						if (send_cmd(CMD1, 0) == 0) break; /* CMD1 */
-					}
-				} while (timer.wait());
-				/* SET_BLOCKLEN */
-				if (!timer.wait() || send_cmd(CMD16, 512) != 0) type = 0;
-			}
-		}
-		card_type = type;
-		/* Idle */
-		userio::deselect();
-		userio::spi_rx_byte();
-		/* Clear STA_NOINIT */
-		if (type)
-		{
-			stat &= ~STA_NOINIT;
+
+			userio::spi_rx_buffer(ocr, 4);
+
+			// SC/HC bit
+			card_info.type = Card_info::SD2;
+			card_info.block_addressing = (ocr[0] & 0x40) != 0;
 		}
 		else
 		{
-			/* Initialization failed */
-			power_off();
+			Timeout timeout(1000000);
+
+			// SDC V1 or MMC
+			card_info.type = (send_cmd(CMD55, 0) <= 1 && send_cmd(CMD41, 0) <= 1) ? Card_info::SD1 : Card_info::MMC;
+
+			do {
+				if (card_info.type == Card_info::SD1)
+				{
+					if (send_cmd(CMD55, 0) <= 1 && send_cmd(CMD41, 0) == 0) break;  // ACMD41
+				}
+				else
+				{
+					if (send_cmd(CMD1, 0) == 0) break;  // CMD1
+				}
+			} while (timeout.wait());
+
+			// Set block length to 512
+			if (!timeout.wait() || send_cmd(CMD16, 512) != 0) return STA_NOINIT;
 		}
-		return stat;
+
+		// Success
+
+		card_info.initialized = true;
+		card_info.write_protected = false;  // Fixed to false
+
+		return 0;
 	}
 
 	/* return disk status */
-	DSTATUS disk_status(BYTE drv)
+	DSTATUS disk_status(uint8_t drv)
 	{
-		if (drv) return STA_NOINIT;
-		return stat;
+		if (drv != 0) return STA_NOINIT;
+		return card_info.initialized ? 0 : STA_NOINIT;
 	}
 
 	/* read sector */
-	DRESULT disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
+	DRESULT disk_read(uint8_t pdrv, uint8_t* buff, DWORD sector, UINT count)
 	{
-		/* pdrv should be 0 */
-		if (pdrv || !count) return RES_PARERR;
+		if (pdrv != 0 || count == 0) return RES_PARERR;
+		if (!card_info.initialized) return RES_NOTRDY;
 
-		/* no disk */
-		if (stat & STA_NOINIT) return RES_NOTRDY;
-
-		/* convert to byte address */
-		if (!(card_type & CT_SD2)) sector *= 512;
+		// uint8_t addressing
+		if (!card_info.block_addressing) sector *= 512;
 
 		userio::select();
 
-		if (count == 1)
-		{
-			/* READ_SINGLE_BLOCK */
-			if ((send_cmd(CMD17, sector) == 0) && rx_data_block(buff, 512)) count = 0;
-		}
-		else
-		{
-			/* READ_MULTIPLE_BLOCK */
-			if (send_cmd(CMD18, sector) == 0)
-			{
-				do {
-					if (!rx_data_block(buff, 512)) break;
-					buff += 512;
-				} while (--count);
-
-				/* STOP_TRANSMISSION */
-				send_cmd(CMD12, 0);
-			}
-		}
+		if (count == 1 ? read_single_block(buff, sector) : read_multiple_block(buff, sector, count)) count = 0;
 
 		/* Idle */
 		userio::deselect();
 		userio::spi_rx_byte();
 
-		return count ? RES_ERROR : RES_OK;
+		return count > 0 ? RES_ERROR : RES_OK;
 	}
 
 /* write sector */
 #if _USE_WRITE == 1
-	DRESULT disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
+	DRESULT disk_write(uint8_t pdrv, const uint8_t* buff, DWORD sector, UINT count)
 	{
-		/* pdrv should be 0 */
-		if (pdrv || !count) return RES_PARERR;
+		if (pdrv != 0 || count == 0) return RES_PARERR;
+		if (!card_info.initialized) return RES_NOTRDY;
+		if (card_info.write_protected) return RES_WRPRT;
 
-		/* no disk */
-		if (stat & STA_NOINIT) return RES_NOTRDY;
-
-		/* write protection */
-		if (stat & STA_PROTECT) return RES_WRPRT;
-
-		/* convert to byte address */
-		if (!(card_type & CT_SD2)) sector *= 512;
+		// uint8_t addressing
+		if (!card_info.block_addressing) sector *= 512;
 
 		userio::select();
 
-		if (count == 1)
-		{
-			/* WRITE_BLOCK */
-			if ((send_cmd(CMD24, sector) == 0) && tx_data_block(buff, 0xFE)) count = 0;
-		}
-		else
-		{
-			/* WRITE_MULTIPLE_BLOCK */
-			if (card_type & CT_SD1)
-			{
-				send_cmd(CMD55, 0);
-				send_cmd(CMD23, count); /* ACMD23 */
-			}
+		// Wait for SD card to be ready
+		for (int i = 0; i < 10; i++)
+			if (ready_wait()) break;
 
-			if (send_cmd(CMD25, sector) == 0)
-			{
-				do {
-					if (!tx_data_block(buff, 0xFC)) break;
-					buff += 512;
-				} while (--count);
-
-				tx_data_block(nullptr, 0xFD); /* STOP_TRAN token */
-			}
+		if (ready_wait())
+		{
+			if (count == 1 ? write_single_block(buff, sector) : write_multiple_block(buff, sector, count)) count = 0;
 		}
 
 		/* Idle */
 		userio::deselect();
 		userio::spi_rx_byte();
 
-		return count ? RES_ERROR : RES_OK;
+		return count > 0 ? RES_ERROR : RES_OK;
 	}
 #endif /* _USE_WRITE */
 
 	/* ioctl */
-	DRESULT disk_ioctl(BYTE drv, BYTE ctrl, void* buff)
+	DRESULT disk_ioctl(uint8_t drv, uint8_t ctrl, void* buff)
 	{
 		DRESULT res;
 		uint8_t n, csd[16], *ptr = (uint8_t*)buff;
@@ -399,17 +523,17 @@ namespace driver::sd
 		{
 			switch (*ptr)
 			{
-			case 0:
-				power_off(); /* Power Off */
+			case 0:  // Power off chip
+				power_off();
 				res = RES_OK;
 				break;
-			case 1:
-				power_on(); /* Power On */
+			case 1:  // Power on chip
+				power_on();
 				res = RES_OK;
 				break;
-			case 2:
-				*(ptr + 1) = check_power();
-				res = RES_OK; /* Power Check */
+			case 2:  // Power Check
+				*(ptr + 1) = card_info.powered;
+				res = RES_OK;
 				break;
 			default:
 				res = RES_PARERR;
@@ -417,11 +541,8 @@ namespace driver::sd
 		}
 		else
 		{
-			/* no disk */
-			if (stat & STA_NOINIT)
-			{
-				return RES_NOTRDY;
-			}
+			if (!card_info.initialized) return RES_NOTRDY;
+
 			userio::select();
 			switch (ctrl)
 			{
@@ -450,7 +571,8 @@ namespace driver::sd
 				res = RES_OK;
 				break;
 			case CTRL_SYNC:
-				if (ready_wait() == 0xFF) res = RES_OK;
+				while (!ready_wait());
+				res = RES_OK;
 				break;
 			case MMC_GET_CSD:
 				/* SEND_CSD */

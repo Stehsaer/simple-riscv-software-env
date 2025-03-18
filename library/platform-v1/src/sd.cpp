@@ -6,7 +6,7 @@ namespace driver::sd::userio
 {
 	uint32_t get_clock()
 	{
-		return platform_v1::clock.get_tick32();
+		return (platform_v1::clock.get_tick64() * 1'000'000 / platform_v1::frequency) % 0xFFFFFFFF;
 	}
 
 	/* slave select */
@@ -30,7 +30,7 @@ namespace driver::sd::userio
 	}
 
 	/* SPI transmit buffer */
-	void spi_tx_buffer(uint8_t* buffer, uint16_t len)
+	void spi_tx_buffer(const uint8_t* buffer, uint16_t len)
 	{
 		memcpy((void*)platform_v1::spi_sd.tx, buffer, len);
 		platform_v1::spi_sd.send_bytes(len);
@@ -62,6 +62,8 @@ namespace platform_v1::sd
 {
 	void set_speed(uint32_t rate_khz)
 	{
+		spi_sd.wait();
+
 		if (rate_khz == 0)
 		{
 			spi_sd.divider = 65535;
@@ -73,5 +75,7 @@ namespace platform_v1::sd
 			spi_sd.divider = 65535;
 		else
 			spi_sd.divider = divider;
+
+		spi_sd.wait();
 	}
 }

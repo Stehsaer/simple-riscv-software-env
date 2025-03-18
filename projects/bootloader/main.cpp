@@ -110,6 +110,34 @@ class Directory_raii
 	operator DIR&() { return dir; }
 };
 
+std::vector<std::string> parse_input()
+{
+	std::vector<std::string> args;
+
+	char buffer[512];
+	char buffer_copy[512];
+	fgets(buffer, sizeof(buffer), stdin);
+
+	char* cur = buffer;
+
+	while (true)
+	{
+		while (*cur == ' ') cur++;
+		if (*cur == '\0' || *cur == '\n') break;
+
+		char* start = cur;
+
+		while (*cur != '\0' && *cur != ' ' && *cur != '\n') cur++;
+
+		memcpy(buffer_copy, start, cur - start);
+		buffer_copy[cur - start] = '\0';
+
+		args.emplace_back(buffer_copy);
+	}
+
+	return args;
+}
+
 void command_ls()
 {
 	Directory_raii dir("/");
@@ -229,12 +257,6 @@ std::optional<Program_load_result> load_file(const char* path)
 				return std::nullopt;
 			}
 
-			if (program_header.p_filesz == 0)
-			{
-				printf(ERROR_PREFIX_STRING "Segment error: file size is 0\n");
-				return std::nullopt;
-			}
-
 			if (program_header.p_memsz == 0)
 			{
 				printf(ERROR_PREFIX_STRING "Segment error: memory size is 0\n");
@@ -297,7 +319,6 @@ void mount_sd_card()
 
 	while (true)
 	{
-		driver::sd::reset_sd_library();
 		platform_v1::sd::set_speed(400);  // Low speed mode
 
 		const auto mount_result = driver::fat32::mount_disk();
@@ -348,32 +369,42 @@ int main()
 		printf(ANSI_GREEN_COLOR ANSI_BOLD "bootloader" ANSI_RESET_COLOR ":$ ");
 		fflush(stdout);
 
-		char input[256] = {0};
-		scanf("%s", input);
+		const auto args = parse_input();
 
-		printf("%s\n", input);
+		if (args.empty()) continue;
 
-		if (input[0] == ':')
+		if (args[0][0] == ':')
 		{
-			if (strcmp(input + 1, "ls") == 0)
+			if (args[0] == ":ls")
 				command_ls();
-			else if (strcmp(input + 1, "info") == 0)
+			else if (args[0] == ":info")
 				command_info();
-			else if (strcmp(input + 1, "exit") == 0)
+			else if (args[0] == ":exit")
 				break;
+			else if (args[0] == ":reload")
+			{
+				unmount_sd_card();
+				mount_sd_card();
+			}
 			else
-				printf(ERROR_PREFIX_STRING "Unknown command \"%s\"\n", input + 1);
+				printf(ERROR_PREFIX_STRING "Unknown command \"%s\"\n", args[0].c_str());
 		}
 		else
 		{
-			const auto result = load_file(input);
+			using Program_type = std::pair<int, int> (*)(int argc, char** argv);
+
+			const auto result = load_file(args[0].c_str());
+
+			std::vector<char*> argv;
+			argv.reserve(args.size());
+			for (const auto& arg : args) argv.push_back(const_cast<char*>(arg.c_str()));
 
 			if (result.has_value())
 			{
 				unmount_sd_card();
 
 				const auto [entry_address] = result.value();
-				const auto [return_value, status] = ((std::pair<int, int>(*)(void))entry_address)();
+				const auto [return_value, status] = ((Program_type)entry_address)(argv.size(), argv.data());
 
 				printf(ANSI_RESET_COLOR "\n");
 
