@@ -2,7 +2,7 @@ set_config("ccprefix", "riscv64-unknown-elf")
 -- set_config("branch_cost", 5)
 set_config("nano_libc", false)
 
-toolchain("riscv-gcc")
+toolchain("riscv-gcc-baremetal")
 
     set_kind('standalone')
 

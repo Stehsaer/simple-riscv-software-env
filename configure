@@ -1,2 +1,2 @@
 #!/bin/bash
-xmake f -a rv32im_zicond_zifencei -m $1
+xmake f -a rv32im_zicond_zicsr_zifencei -m $1
