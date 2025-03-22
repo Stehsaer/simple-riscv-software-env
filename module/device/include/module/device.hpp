@@ -1,5 +1,6 @@
 #pragma once
 
-#include "device/clock.hpp"
-#include "device/spi.hpp"
-#include "device/uart.hpp"
+#include "device/kintex7/clock.hpp"
+#include "device/kintex7/spi.hpp"
+#include "device/kintex7/uart.hpp"
+#include "device/qemu/uart.hpp"
