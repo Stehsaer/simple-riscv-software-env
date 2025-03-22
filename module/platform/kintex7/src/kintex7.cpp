@@ -11,9 +11,9 @@ namespace platform::kintex7
 {
 	const uint32_t frequency_khz = 200000;  // 200MHz
 
-	device::Fpga_uart& uart = PERIPH_BLOCK(device::Fpga_uart, 0);
-	device::Clock& clock = PERIPH_BLOCK(device::Clock, 1);
-	device::SPI& spi_1 = PERIPH_BLOCK(device::SPI, 2);
+	device::kintex7::Uart& uart = PERIPH_BLOCK(device::kintex7::Uart, 0);
+	device::kintex7::Clock& clock = PERIPH_BLOCK(device::kintex7::Clock, 1);
+	device::kintex7::SPI& spi_1 = PERIPH_BLOCK(device::kintex7::SPI, 2);
 }
 
 extern "C"

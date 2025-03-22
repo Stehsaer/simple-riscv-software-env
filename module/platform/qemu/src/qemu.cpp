@@ -2,5 +2,5 @@
 
 namespace platform::qemu
 {
-	device::Qemu_uart& uart = *(device::Qemu_uart*)0x1000'0000;
+	device::qemu::Uart& uart = *(device::qemu::Uart*)0x1000'0000;
 }

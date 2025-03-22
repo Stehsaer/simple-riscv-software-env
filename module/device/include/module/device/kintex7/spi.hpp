@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace device
+namespace device::kintex7
 {
 	struct SPI
 	{

@@ -4,7 +4,7 @@ target("project.os-class.lab2.screen")
 	add_files("screen.cpp")
 	add_deps(
 		"module.platform.qemu", 
-		"module.base.start.boot",
+		"module.start.boot",
 		"module.file.interface",
 		"module.file.driver.uart"
 	)
@@ -24,7 +24,7 @@ target("project.os-class.lab2.helloworld")
 	add_files("helloworld.cpp")
 	add_deps(
 		"module.platform.qemu", 
-		"module.base.start.boot",
+		"module.start.boot",
 		"module.file.interface",
 		"module.file.driver.uart"
 	)

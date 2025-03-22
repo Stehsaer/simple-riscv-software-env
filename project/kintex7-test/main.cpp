@@ -52,8 +52,8 @@ class Screen
 int main()
 {
 	auto& uart = platform::kintex7::uart;
-	uart.configure(104, device::Fpga_uart::Parity::Odd, device::Fpga_uart::Stopbits::Bit1);
-	file::fs.mount_device("uart:/", std::make_unique<file::driver::Fpga_uart_driver>(uart));
+	uart.configure(104, device::kintex7::Uart::Parity::Odd, device::kintex7::Uart::Stopbits::Bit1);
+	file::fs.mount_device("uart:/", std::make_unique<file::driver::kintex7::Uart_driver>(uart));
 
 	freopen("uart:/", "w", stdout);
 

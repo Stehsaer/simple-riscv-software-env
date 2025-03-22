@@ -1,6 +1,6 @@
-#include "module/device/clock.hpp"
+#include "module/device/kintex7/clock.hpp"
 
-namespace device
+namespace device::kintex7
 {
 	[[gnu::noinline]] uint64_t Clock::get_timecmp() const noexcept
 	{

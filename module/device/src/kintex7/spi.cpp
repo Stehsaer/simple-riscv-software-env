@@ -1,6 +1,6 @@
-#include "module/device/spi.hpp"
+#include "module/device/kintex7/spi.hpp"
 
-namespace device
+namespace device::kintex7
 {
 	void SPI::set_divider(uint16_t divider) noexcept
 	{

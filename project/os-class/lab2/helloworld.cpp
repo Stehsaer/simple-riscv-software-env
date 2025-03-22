@@ -5,7 +5,7 @@
 int main()
 {
 	auto& uart = platform::qemu::uart;
-	file::fs.mount_device("uart:/", std::make_unique<file::driver::Qemu_uart_driver>(uart));
+	file::fs.mount_device("uart:/", std::make_unique<file::driver::qemu::Uart_driver>(uart));
 
 	freopen("uart:/", "w", stdout);
 

@@ -2,5 +2,5 @@
 
 namespace platform::qemu
 {
-	extern device::Qemu_uart& uart;
+	extern device::qemu::Uart& uart;
 }

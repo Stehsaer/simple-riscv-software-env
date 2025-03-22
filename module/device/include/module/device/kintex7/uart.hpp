@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-namespace device
+namespace device::kintex7
 {
-	struct Fpga_uart
+	struct Uart
 	{
 		alignas(4) volatile char tx;          // [Register] Transmit, @0x00
 		alignas(4) volatile char rx;          // [Register] Receive, @0x04
@@ -30,10 +30,5 @@ namespace device
 		bool tx_available() const noexcept { return status & 0b10; }
 		bool error() const noexcept { return status & 0b100; }
 		void configure(uint32_t divisor, Parity parity, Stopbits stopbits) noexcept;
-	};
-
-	struct Qemu_uart
-	{
-		alignas(4) volatile char tx_rx;
 	};
 }

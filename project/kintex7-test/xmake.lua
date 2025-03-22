@@ -4,7 +4,7 @@ target("project.kintex7-test")
 	add_files("main.cpp")
 	add_deps(
 		"module.platform.kintex7", 
-		"module.base.start.boot",
+		"module.start.boot",
 		"module.file.interface",
 		"module.file.driver.uart",
 		"module.file.driver.fatfs",

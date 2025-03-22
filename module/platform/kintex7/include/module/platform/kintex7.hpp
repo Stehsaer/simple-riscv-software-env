@@ -8,9 +8,9 @@
 namespace platform::kintex7
 {
 	extern const uint32_t frequency_khz;
-	extern device::Fpga_uart& uart;
-	extern device::Clock& clock;
-	extern device::SPI& spi_1;
+	extern device::kintex7::Uart& uart;
+	extern device::kintex7::Clock& clock;
+	extern device::kintex7::SPI& spi_1;
 }
 
 extern "C"
