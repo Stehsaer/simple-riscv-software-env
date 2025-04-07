@@ -1,4 +1,11 @@
+# Specific to the project
 *.txt
+*.img
+disk-content/*
+project/*
+!project/os-class/
+
+# Generic
 build/*
 .VSCodeCounter/*
 .xmake/*

@@ -8,7 +8,30 @@
 			"name": "Debug OS-Lab2-Helloworld",
 			"type": "cppdbg",
 			"request": "launch",
-			"program": "/mnt/Dev/Dev/riscv/software/rv-project/build/bare-metal/rv32im_zicond_zifencei/releasedbg/os-lab2-helloworld.sym",
+			"program": "/mnt/Dev/Dev/riscv/software/rv-project/build/bare-metal/rv32im_zicond_zicsr_zifencei/releasedbg/project.os-class.lab2.helloworld.sym",
+			"MIMode": "gdb",
+			"cwd": ".",
+			"miDebuggerPath": "riscv64-unknown-elf-gdb", // Update this to the path of your riscv64-unknown-elf-gdb
+			"miDebuggerServerAddress": "localhost:1234",
+			"stopAtConnect": true,
+			"setupCommands": [
+				{
+					"description": "Enable pretty-printing for gdb",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": true
+				},
+				{
+					"description": "Set Disassembly Flavor to Intel",
+					"text": "-gdb-set disassembly-flavor intel",
+					"ignoreFailures": true
+				}
+			]
+		},
+		{
+			"name": "Debug OS-Lab3-Virtio",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "/mnt/Dev/Dev/riscv/software/rv-project/build/bare-metal/rv32im_zicond_zicsr_zifencei/releasedbg/project.os-class.lab3.disk-io.sym",
 			"MIMode": "gdb",
 			"cwd": ".",
 			"miDebuggerPath": "riscv64-unknown-elf-gdb", // Update this to the path of your riscv64-unknown-elf-gdb

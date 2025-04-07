@@ -1,8 +1,10 @@
 /* Edit the sections to match the platform */
 
-RAM_BASE = 0x80040000;
-RAM_SIZE = 2047M + 768K;
+RAM_BASE = 0x80100000;
+RAM_SIZE = 2047M;
 STACK_SIZE = 2M;
+
+PERIPH_BASE = 0x00010000;
 
 MEMORY
 {
@@ -97,6 +99,8 @@ SECTIONS
 		PROVIDE(_heap_start = .);
 		PROVIDE(_heap_end = ORIGIN(STORAGE) + LENGTH(STORAGE) - STACK_SIZE);
 	} > STORAGE
+	
+	PROVIDE(_periph_start = PERIPH_BASE);
 }
 
 ENTRY(_start)

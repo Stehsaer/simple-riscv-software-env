@@ -2,15 +2,19 @@
 
 #include <sys/fcntl.h>
 
+#include <source_location>
+
 namespace file::driver::fatfs
 {
 	std::unique_ptr<Media_interface> media_interface = nullptr;
 	std::unique_ptr<FATFS> fs = nullptr;
 	FRESULT last_failure = FR_OK;
+	const char* last_failure_func = "";
 
-	static error_t convert_fat32_errcode(FRESULT result)
+	static error_t convert_fat32_errcode(FRESULT result, std::source_location loc = std::source_location::current())
 	{
 		last_failure = result;
+		last_failure_func = loc.function_name();
 
 		switch (result)
 		{

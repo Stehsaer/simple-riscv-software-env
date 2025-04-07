@@ -1,4 +1,4 @@
-#include "module/device.hpp"
+#include "module/device/qemu.hpp"
 
 namespace platform::qemu
 {

@@ -8,6 +8,7 @@ namespace file::driver::qemu
 		mode_t mode [[maybe_unused]]
 	) noexcept
 	{
+		if (!path.empty()) return {EINVAL, nullptr};
 		if (path != "") return {ENOENT, nullptr};
 
 		return {0, std::make_unique<Fd>(uart)};

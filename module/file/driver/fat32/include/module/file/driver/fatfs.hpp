@@ -24,6 +24,7 @@ namespace file::driver::fatfs
 
 	extern std::unique_ptr<Media_interface> media_interface;
 	extern FRESULT last_failure;
+	extern const char* last_failure_func;
 
 	class Device : public file::File_device
 	{

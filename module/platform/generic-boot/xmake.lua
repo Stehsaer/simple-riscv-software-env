@@ -1,4 +1,4 @@
-target("module.start.boot")
+target("module.platform.generic-boot")
 
 	set_kind("static")
 	add_files("raw-start.s")

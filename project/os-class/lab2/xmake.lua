@@ -4,17 +4,15 @@ target("project.os-class.lab2.screen")
 	add_files("screen.cpp")
 	add_deps(
 		"module.platform.qemu", 
-		"module.start.boot",
+		"module.platform.generic-boot",
 		"module.file.interface",
 		"module.file.driver.uart"
 	)
 
 	add_rules(
 		"module.platform.qemu.native",
-		"generate.map"
+		"report-size"
 	)
-
-	on_run(run_target_qemu)
 
 target_end()
 
@@ -24,16 +22,14 @@ target("project.os-class.lab2.helloworld")
 	add_files("helloworld.cpp")
 	add_deps(
 		"module.platform.qemu", 
-		"module.start.boot",
+		"module.platform.generic-boot",
 		"module.file.interface",
 		"module.file.driver.uart"
 	)
 
 	add_rules(
 		"module.platform.qemu.native",
-		"generate.map"
+		"report-size"
 	)
-
-	on_run(run_target_qemu)
 
 target_end()

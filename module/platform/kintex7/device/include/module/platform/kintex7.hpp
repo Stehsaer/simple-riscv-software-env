@@ -1,6 +1,6 @@
 #pragma once
 
-#include "module/device.hpp"
+#include "module/device/kintex7.hpp"
 
 #include <cstdint>
 #include <ctime>
