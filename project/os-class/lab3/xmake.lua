@@ -43,7 +43,7 @@ target("project.os-class.lab3.boot")
 		"module.file.driver.uart",
 		"module.file.driver.fatfs.backend.virtio"
 	)
-
+	
 	add_rules(
 		"module.platform.qemu.native",
 		"report-size"

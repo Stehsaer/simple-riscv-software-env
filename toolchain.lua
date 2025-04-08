@@ -34,8 +34,6 @@ toolchain("riscv-gcc-baremetal")
         add_cxflags("-finline-functions")
     end
 
-    add_cxflags("-mtune=stehsaer-core")
-
     on_load(function (toolchain)
 
 		import("core.project.config")
