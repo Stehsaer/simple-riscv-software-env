@@ -3,14 +3,14 @@ target("project.os-class.lab2.screen")
 	set_kind("binary")
 	add_files("screen.cpp")
 	add_deps(
-		"module.platform.qemu", 
-		"module.platform.generic-boot",
-		"module.file.interface",
-		"module.file.driver.uart"
+		"platform.qemu", 
+		"platform.generic-boot",
+		"file.interface",
+		"file.driver.uart"
 	)
 
 	add_rules(
-		"module.platform.qemu.native",
+		"platform.qemu.native",
 		"report-size"
 	)
 
@@ -21,14 +21,14 @@ target("project.os-class.lab2.helloworld")
 	set_kind("binary")
 	add_files("helloworld.cpp")
 	add_deps(
-		"module.platform.qemu", 
-		"module.platform.generic-boot",
-		"module.file.interface",
-		"module.file.driver.uart"
+		"platform.qemu", 
+		"platform.generic-boot",
+		"file.interface",
+		"file.driver.uart"
 	)
 
 	add_rules(
-		"module.platform.qemu.native",
+		"platform.qemu.native",
 		"report-size"
 	)
 

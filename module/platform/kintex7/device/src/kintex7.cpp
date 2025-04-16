@@ -1,4 +1,4 @@
-#include "module/platform/kintex7.hpp"
+#include "platform/kintex7.hpp"
 
 #include <cerrno>
 #include <sys/_timeval.h>
@@ -9,23 +9,31 @@
 
 namespace platform::kintex7
 {
-	const uint32_t frequency_khz = 200000;  // 200MHz
-
 	device::kintex7::Uart& uart = PERIPH_BLOCK(device::kintex7::Uart, 0);
 	device::kintex7::Clock& clock = PERIPH_BLOCK(device::kintex7::Clock, 1);
 	device::kintex7::SPI& spi_1 = PERIPH_BLOCK(device::kintex7::SPI, 2);
+
+	uint64_t get_us()
+	{
+		return clock.get_timer() * 1000 / frequency_khz;
+	}
 }
 
 extern "C"
 {
-	static uint64_t get_us()
+	unsigned int sleep(unsigned int time)
 	{
-		return platform::kintex7::clock.get_timer() / (platform::kintex7::frequency_khz / 1000);
+		const uint64_t ticks = time * CLOCKS_PER_SEC;
+		const uint64_t start = platform::kintex7::get_us();
+		while (platform::kintex7::get_us() - start < ticks)
+		{
+		}
+		return 0;
 	}
 
 	clock_t _times(struct tms* buf)
 	{
-		const auto time_us = get_us();
+		const auto time_us = platform::kintex7::get_us();
 
 		if (buf != nullptr) [[likely]]
 		{
@@ -40,7 +48,7 @@ extern "C"
 
 	int _gettimeofday(struct timeval* time, void*)
 	{
-		const auto time_us = get_us();
+		const auto time_us = platform::kintex7::get_us();
 
 		if (time == nullptr) [[unlikely]]
 		{

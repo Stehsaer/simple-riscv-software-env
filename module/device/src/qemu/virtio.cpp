@@ -1,4 +1,4 @@
-#include "module/device/qemu/virtio.hpp"
+#include "device/qemu/virtio.hpp"
 #include <cstring>
 
 namespace device::qemu::virtio

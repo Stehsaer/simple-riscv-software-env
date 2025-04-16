@@ -8,10 +8,10 @@
 #include <system_error>
 #include <vector>
 
-#include <module/file/driver/fatfs/backend/virtio.hpp>
-#include <module/file/driver/uart.hpp>
-#include <module/file/interface.hpp>
-#include <module/platform/qemu.hpp>
+#include <file/driver/fatfs/backend/virtio.hpp>
+#include <file/driver/uart.hpp>
+#include <file/interface.hpp>
+#include <platform/qemu.hpp>
 
 constexpr size_t min_address = 0x8010'0000;
 constexpr size_t max_address = 0xFFF0'0000;

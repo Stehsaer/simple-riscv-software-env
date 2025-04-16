@@ -54,16 +54,16 @@ For sub-projects built for QEMU, use `xmake run` to see the results. For sub-pro
 
 `Modules` provides the basic environment in a modular manner. Combine different modules together to support different features. Examples are:
 
-- Dynamic Allocation: `module.allocator`
-- Emulated File System: `module.file.interface`
-- Fatfs: `module.file.driver.fatfs`
-  - Additional SD card backend: `module.file.driver.fatfs.backend.sd`
+- Dynamic Allocation: `allocator`
+- Emulated File System: `file.interface`
+- Fatfs: `file.driver.fatfs`
+  - Additional SD card backend: `file.driver.fatfs.backend.sd`
 
 However some modules are essential:
 
-- `module.device`: Provides class/interfaces to different device across different platforms.
-- `module.platform`: Provides platform-specific definitions for devices, eg. Clocks, SPI, Serial...
-- `module.start.*`: Provides startup assembly programs that kick-starts the platform by setting up Stack Pointers, copying data from LMA to VMA etc.
+- `device`: Provides class/interfaces to different device across different platforms.
+- `platform`: Provides platform-specific definitions for devices, eg. Clocks, SPI, Serial...
+- `start.*`: Provides startup assembly programs that kick-starts the platform by setting up Stack Pointers, copying data from LMA to VMA etc.
 
 #### Platforms
 

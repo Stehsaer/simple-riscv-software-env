@@ -1,33 +1,25 @@
-target("module.platform.kintex7")
-	set_kind("static")
-	set_languages("c++23", "c23", {public=true})
-
-	add_deps("module.device", {public=true})
-	add_includedirs("device/include", {public=true})
-	add_files("device/src/**.cpp")
-
-target_end()
+includes("device", "fatfs-sd")
 
 rule("generate.coe", function()
 	add_deps("generate.bin", {order=true})
 	after_build(function(target)
-		os.run("python3 $(projectdir)/script/bin-to-coe.py %s.bin %s.coe 4", target:targetfile(), target:targetfile())
+		os.run("python3 $(scriptdir)/bin-to-coe.py %s.bin %s.coe 4", target:targetfile(), target:targetfile())
 	end)
 end)
 
 
-rule("module.platform.kintex7.native", function()
+rule("platform.kintex7.native", function()
 	on_load(function (target)
 		target:add("files", "$(projectdir)/module/platform/kintex7/linkerscript/native.ld")
+		target:add("deps", "platform.generic-boot", "platform.kintex7")
 	end)
 
 	add_deps("generate.coe")
 end)
 
-rule("module.platform.kintex7.load", function()
+rule("platform.kintex7.nommu-program", function()
 	on_load(function (target)
-		target:add("files", "$(projectdir)/module/platform/kintex7/linkerscript/load.ld")
+		target:add("files", "$(projectdir)/module/platform/kintex7/linkerscript/nommu-program.ld", "$(projectdir)/module/platform/kintex7/nommu-program/start.S")
+		target:add("deps", "platform.kintex7")
 	end)
-
-	add_deps("generate.coe")
 end)

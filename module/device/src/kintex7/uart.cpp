@@ -1,4 +1,4 @@
-#include "module/device/kintex7/uart.hpp"
+#include "device/kintex7/uart.hpp"
 
 namespace device::kintex7
 {

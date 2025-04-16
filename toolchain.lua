@@ -34,6 +34,8 @@ toolchain("riscv-gcc-baremetal")
         add_cxflags("-finline-functions")
     end
 
+    add_cxxflags("-fno-exceptions")
+
     on_load(function (toolchain)
 
 		import("core.project.config")

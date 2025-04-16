@@ -1,8 +1,8 @@
-target("module.platform.qemu")
+target("platform.qemu")
 	set_kind("static")
 	set_languages("c++23", "c23", {public=true})
 
-	add_deps("module.device", {public=true})
+	add_deps("device", {public=true})
 	add_includedirs("include", {public=true})
 	add_files("src/**.cpp")
 
@@ -27,7 +27,7 @@ rule("run-qemu", function()
 end)
 
 
-rule("module.platform.qemu.native")
+rule("platform.qemu.native")
 	on_load(function (target)
 		target:add("files", "$(projectdir)/module/platform/qemu/linkerscript/native.ld")
 	end)

@@ -3,15 +3,15 @@ target("project.os-class.lab3.disk-io")
 	set_kind("binary")
 	add_files("disk-io.cpp")
 	add_deps(
-		"module.platform.qemu", 
-		"module.platform.generic-boot",
-		"module.file.interface",
-		"module.file.driver.uart",
-		"module.file.driver.fatfs.backend.virtio"
+		"platform.qemu", 
+		"platform.generic-boot",
+		"file.interface",
+		"file.driver.uart",
+		"file.driver.fatfs.backend.virtio"
 	)
 
 	add_rules(
-		"module.platform.qemu.native",
+		"platform.qemu.native",
 		"report-size"
 	)
 
@@ -37,15 +37,15 @@ target("project.os-class.lab3.boot")
 	set_kind("binary")
 	add_files("boot.cpp")
 	add_deps(
-		"module.platform.qemu", 
-		"module.platform.generic-boot",
-		"module.file.interface",
-		"module.file.driver.uart",
-		"module.file.driver.fatfs.backend.virtio"
+		"platform.qemu", 
+		"platform.generic-boot",
+		"file.interface",
+		"file.driver.uart",
+		"file.driver.fatfs.backend.virtio"
 	)
 	
 	add_rules(
-		"module.platform.qemu.native",
+		"platform.qemu.native",
 		"report-size"
 	)
 

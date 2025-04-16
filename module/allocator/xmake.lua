@@ -1,4 +1,4 @@
-target("module.allocator")
+target("allocator")
 
 	set_kind("static")
 	set_languages("c++23", {public=true})

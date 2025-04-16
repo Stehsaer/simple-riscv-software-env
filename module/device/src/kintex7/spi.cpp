@@ -1,4 +1,4 @@
-#include "module/device/kintex7/spi.hpp"
+#include "device/kintex7/spi.hpp"
 
 namespace device::kintex7
 {
@@ -9,12 +9,12 @@ namespace device::kintex7
 
 	void SPI::select() noexcept
 	{
-		cs = false;
+		cs = true;
 	}
 
 	void SPI::deselect() noexcept
 	{
-		cs = true;
+		cs = false;
 	}
 
 	void SPI::start_transaction(uint16_t len) noexcept

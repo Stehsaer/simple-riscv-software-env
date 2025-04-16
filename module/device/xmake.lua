@@ -1,4 +1,4 @@
-target("module.device")
+target("device")
 
 	set_kind("static")
 	set_languages("c++23", "c23", {public=true})

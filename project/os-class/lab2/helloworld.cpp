@@ -1,6 +1,6 @@
-#include "module/file/driver/uart.hpp"
-#include "module/file/interface.hpp"
-#include "module/platform/qemu.hpp"
+#include "file/driver/uart.hpp"
+#include "file/interface.hpp"
+#include "platform/qemu.hpp"
 
 int main()
 {

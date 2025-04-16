@@ -1,4 +1,4 @@
-#include "module/device/kintex7/clock.hpp"
+#include "device/kintex7/clock.hpp"
 
 namespace device::kintex7
 {
