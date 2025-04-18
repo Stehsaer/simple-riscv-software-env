@@ -54,6 +54,10 @@ namespace file::driver::qemu
 
 		for (size_t i = 0; i < count; i++)
 		{
+			while (!(uart.lsr & device::qemu::Uart::lsr_rx_ready))
+			{
+			}
+
 			ptr[i] = uart.tx_rx;
 			if (ptr[i] == '\n' || ptr[i] == '\r') return i + 1;
 		}

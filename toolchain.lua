@@ -2,6 +2,20 @@ set_config("ccprefix", "riscv64-unknown-elf")
 -- set_config("branch_cost", 5)
 set_config("nano_libc", false)
 
+local function parse_arch_string(arch_string)
+
+    local arch = arch_string:match("rv%d%d(.*)")
+    local split = arch:split("_")
+
+    local single_letters = {}
+
+    for letter in split[1]:gmatch(".") do
+        table.insert(single_letters, letter)
+    end
+
+    return (table.concat(single_letters, "_") .. "_" .. table.concat(split, "_", 2)):split("_")
+end
+
 toolchain("riscv-gcc-baremetal")
 
     set_kind('standalone')
@@ -28,13 +42,11 @@ toolchain("riscv-gcc-baremetal")
 	set_toolset('strip', toolchain_prefix .. '-strip')
 	set_toolset('ld', toolchain_prefix .. '-ld')
 	set_toolset('ar', toolchain_prefix .. '-gcc-ar')
+	set_toolset('sh', toolchain_prefix .. '-ld')
 
     if is_mode("release") or is_mode("releasedbg") then
-        add_cxflags("-funroll-loops")
-        add_cxflags("-finline-functions")
+        add_cxflags("-funroll-loops", "-finline-functions")
     end
-
-    add_cxxflags("-fno-exceptions")
 
     on_load(function (toolchain)
 
@@ -47,6 +59,10 @@ toolchain("riscv-gcc-baremetal")
 
         function add_cxflags(flags)
             toolchain:add('cxflags', flags)
+        end
+
+        function add_cxxflags(flags)
+            toolchain:add('cxxflags', flags)
         end
 
         function add_asflags(flags)
@@ -86,15 +102,21 @@ toolchain("riscv-gcc-baremetal")
         -- Assembler arguments
 		add_asflags('-nostartfiles')
         add_asflags('-march=' .. get_config('arch'))
-        add_asflags('-Xassembler --defsym -Xassembler')
-        add_asflags(('ARCH_%s=1'):format(get_config('arch'):upper()))
         add_asflags('-mabi=ilp32')
+        add_asflags("-Xassembler --defsym -Xassembler " .. ('ARCH_%s=1'):format(get_config('arch'):upper()))
 
         -- C/C++ Compiler arguments
         add_cxflags('-march=' .. get_config('arch'))
         add_cxflags('-mabi=ilp32')
         -- add_cxflags('-mbranch-cost=' .. tostring(branch_cost))
-		add_cxflags('-ffunction-sections -fdata-sections -fomit-frame-pointer')
+		add_cxflags("-ffunction-sections", "-fdata-sections", "-fomit-frame-pointer")
+
+        -- Add defines
+        local ext_list = parse_arch_string(get_config('arch'))
+
+        for _, ext in ipairs(ext_list) do
+            add_defines("RVISA_" .. ext:upper())
+        end
 
         -- Get compiler binary path
         local compiler_path = ""
@@ -132,8 +154,8 @@ toolchain("riscv-gcc-baremetal")
         end
 
         -- General linker flags
-        add_ldflags('--oformat elf32-littleriscv --gc-sections -(')
-        
+        add_ldflags("--oformat=elf32-littleriscv")
+        add_ldflags("--gc-sections -(")
     end)
 
 toolchain_end()

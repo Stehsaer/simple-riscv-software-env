@@ -7,5 +7,7 @@ end
 set_toolchains("riscv-gcc-baremetal")
 set_config("plat", "bare-metal")
 
+set_allowedplats("bare-metal")
+
 includes("toolchain.lua", "rule.lua")
 includes("module", "project")

@@ -2,8 +2,20 @@ includes("device", "fatfs-sd")
 
 rule("generate.coe", function()
 	add_deps("generate.bin", {order=true})
-	after_build(function(target)
-		os.run("python3 $(scriptdir)/bin-to-coe.py %s.bin %s.coe 4", target:targetfile(), target:targetfile())
+
+	after_link(function(target, opt)
+		import("core.project.config")
+		import("core.project.depend")
+        import("utils.progress")
+		
+        depend.on_changed(function()
+			os.run("python3 $(scriptdir)/bin-to-coe.py %s.bin %s.coe 4", target:targetfile(), target:targetfile())
+            progress.show(opt.progress, "${bright blue}generating.$(mode) %s", target:targetfile() .. ".coe")
+        end, {files = {target:targetfile()}, changed = target:is_rebuilt()})
+	end)
+
+	on_clean(function(target)
+		os.rm(target:targetfile() .. ".coe")
 	end)
 end)
 
