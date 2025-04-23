@@ -45,7 +45,7 @@ toolchain("riscv-gcc-baremetal")
 	set_toolset('sh', toolchain_prefix .. '-ld')
 
     if is_mode("release") or is_mode("releasedbg") then
-        add_cxflags("-funroll-loops", "-finline-functions")
+        add_cxflags("-funroll-loops")
     end
 
     on_load(function (toolchain)
@@ -154,7 +154,7 @@ toolchain("riscv-gcc-baremetal")
         end
 
         -- General linker flags
-        add_ldflags("--oformat=elf32-littleriscv")
+        add_ldflags("-nostdlib --oformat=elf32-littleriscv")
         add_ldflags("--gc-sections -(")
     end)
 

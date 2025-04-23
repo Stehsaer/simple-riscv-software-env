@@ -84,4 +84,16 @@ extern "C"
 	{
 		return file::fs.dup2(fd, new_fd);
 	}
+
+	int mkdir(const char* pathname [[maybe_unused]], mode_t mode [[maybe_unused]])
+	{
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	int rmdir(const char* pathname [[maybe_unused]])
+	{
+		errno = ENOTSUP;
+		return -1;
+	}
 }

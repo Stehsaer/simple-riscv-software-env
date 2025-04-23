@@ -1,7 +1,12 @@
-# Specific to the project
+# Files
 *.txt
 *.img
+
+# Disk images
 disk-content/*
+disk-extract/*
+
+# Projects
 project/*
 !project/os-class/
 
@@ -10,3 +15,4 @@ build/*
 .VSCodeCounter/*
 .xmake/*
 archive/*
+.vscode

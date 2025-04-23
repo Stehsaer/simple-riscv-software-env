@@ -11,7 +11,8 @@ target("project.os-class.lab2.screen")
 
 	add_rules(
 		"platform.qemu.native",
-		"report-size"
+		"report-size",
+		"platform.qemu.run"
 	)
 
 target_end()
@@ -29,7 +30,8 @@ target("project.os-class.lab2.helloworld")
 
 	add_rules(
 		"platform.qemu.native",
-		"report-size"
+		"report-size",
+		"platform.qemu.run"
 	)
 
 target_end()

@@ -12,10 +12,9 @@ target("project.os-class.lab4.main")
 
 	add_rules(
 		"platform.qemu.native",
-		"report-size"
+		"report-size",
+		"platform.qemu.run"
 	)
-
-	-- set_runargs("-s -S")
 
 	on_run(function(target)
 

@@ -61,6 +61,8 @@ SECTIONS
 		*(.data.*)
 		*(.tdata)
 		*(.tdata.*)
+		*(.got)
+		*(.got.*)
 
 	} > DATA_RAM AT>FLASH
 

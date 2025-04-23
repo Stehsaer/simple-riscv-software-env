@@ -18,18 +18,46 @@ rule("generate.qemu-flash", function()
 	end)
 end)
 
-rule("run-qemu", function()
-	add_deps("generate.qemu-flash", {order=true})
-	on_run(function(target)
-		local run_str = "qemu-system-riscv32 -M virt -cpu rv32,zicond=true -nographic -bios none -drive file=\"" .. target:targetfile() .. ".bin\",format=raw,if=pflash -m 2G"
-		os.exec(run_str)
-	end)
-end)
-
-
 rule("platform.qemu.native")
 	on_load(function (target)
 		target:add("files", "$(projectdir)/module/platform/qemu/linkerscript/native.ld")
 	end)
-	add_deps("run-qemu")
+	add_deps("generate.qemu-flash")
+rule_end()
+
+rule("platform.qemu.full-native")
+	on_load(function (target)
+		target:add("files", "$(projectdir)/module/platform/qemu/linkerscript/full-native.ld")
+	end)
+	add_deps("generate.qemu-flash")
+rule_end()
+
+rule("platform.qemu.run")
+
+	on_run(function(target)
+		local argv = import("core.base.option").get("arguments")
+
+		local extra_args = ""
+		local bin_path = ""
+
+		for _, v in ipairs(argv) do
+			if v == "-debug" then
+				extra_args = extra_args .. " -s -S"
+			end
+			if v:startswith("-bin=") then
+				bin_path = v:sub(6)
+			end
+		end
+
+		if bin_path == "" then
+			bin_path = "$(projectdir)/disk.img"
+		end
+
+		local cmd_prefix = "qemu-system-riscv32 -M virt -cpu rv32,zicond=true -nographic -bios none -m 2G -global virtio-mmio.force-legacy=false"
+		local bootloader_args = " -drive file=\"" .. target:targetfile() .. ".bin\",format=raw,if=pflash"
+		local disk_args = " -device virtio-blk-device,drive=hd0 -drive file=" .. bin_path .. ",if=none,format=raw,id=hd0,media=disk,index=0,cache=none"
+		local run_str = cmd_prefix .. bootloader_args .. disk_args .. " " .. extra_args
+		os.exec(run_str)
+	end)
+
 rule_end()

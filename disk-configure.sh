@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ "$1" -eq "-h"]; then
+	echo "Usage: $0 <fat32_image_file> <source_directory>"
+	exit 0
+fi
+
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 2 ]; then
 	echo "Usage: $0 <fat32_image_file> <source_directory>"

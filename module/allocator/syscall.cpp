@@ -46,7 +46,8 @@ extern "C"
 				return (caddr_t)-1;
 			}
 
-			if (modify_heap_end(original_heap_end - incr, original_heap_end)) return (caddr_t)(original_heap_end - incr);
+			if (modify_heap_end(original_heap_end - incr, original_heap_end))
+				return (caddr_t)(original_heap_end - incr);
 		}
 	}
 #else

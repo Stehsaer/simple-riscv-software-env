@@ -9,5 +9,7 @@ set_config("plat", "bare-metal")
 
 set_allowedplats("bare-metal")
 
+add_repositories("riscv-repo riscv-repo")
+
 includes("toolchain.lua", "rule.lua")
 includes("module", "project")
