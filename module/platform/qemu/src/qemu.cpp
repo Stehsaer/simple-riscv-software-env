@@ -56,4 +56,14 @@ extern "C"
 
 		return 0;
 	}
+
+	int usleep(useconds_t usec)
+	{
+		const uint64_t ticks = usec * CLOCKS_PER_SEC / 1000000ull;
+		const uint64_t start = platform::qemu::get_us();
+		while (platform::qemu::get_us() - start < ticks)
+		{
+		}
+		return 0;
+	}
 }

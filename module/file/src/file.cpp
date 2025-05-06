@@ -38,12 +38,20 @@ namespace file
 				&& std::find_if(
 					   name.begin(),
 					   name.end(),
-					   [](char c)
-					   {
-						   return !std::isalnum(c) && c != '.' && c != '-' && c != '_';
-					   }
+					   [](char c) { return !std::isalnum(c) && c != '.' && c != '-' && c != '_'; }
 				   ) == name.end();
 		}
+
+		class Scoped_lock
+		{
+#ifdef RVISA_A
+
+		  public:
+
+			Scoped_lock() { fs_mutex.lock(); }
+			~Scoped_lock() { fs_mutex.unlock(); }
+#endif
+		};
 	}
 
 #pragma region Filesystem_interface
@@ -99,8 +107,14 @@ namespace file
 		return find->second;
 	}
 
-	error_t Filesystem_interface::mount_device(Dev_id_t& dev_id, std::string_view path, std::unique_ptr<File_device> device)
+	error_t Filesystem_interface::mount_device(
+		Dev_id_t& dev_id,
+		std::string_view path,
+		std::unique_ptr<File_device> device
+	)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available) return 0;
 
 		// Step 1: Split path and check
@@ -124,6 +138,8 @@ namespace file
 
 	error_t Filesystem_interface::mount_device(std::string_view path, std::unique_ptr<File_device> device)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available) return 0;
 
 		// Step 1: Split path and check
@@ -147,6 +163,8 @@ namespace file
 
 	error_t Filesystem_interface::unmount_device(std::string_view path)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available) return 0;
 
 		// Step 1: Split path and check
@@ -174,6 +192,8 @@ namespace file
 
 	off_t Filesystem_interface::lseek(Fd_t fd, off_t offset, int whence)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available)
 		{
 			errno = EBADF;
@@ -192,6 +212,7 @@ namespace file
 
 	ssize_t Filesystem_interface::read(Fd_t fd, void* buf, size_t count)
 	{
+		const util::Scoped_lock lock;
 
 		if (!fs_available)
 		{
@@ -217,6 +238,8 @@ namespace file
 
 	ssize_t Filesystem_interface::write(Fd_t fd, const void* buf, size_t count)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available)
 		{
 			errno = EBADF;
@@ -241,6 +264,8 @@ namespace file
 
 	error_t Filesystem_interface::fstat(Fd_t fd, struct stat& info)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available) return EBADF;
 
 		auto* fd_ptr = get_file_descriptor(fd);
@@ -258,6 +283,8 @@ namespace file
 
 	bool Filesystem_interface::isatty(Fd_t fd)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available)
 		{
 			errno = EBADF;
@@ -277,6 +304,8 @@ namespace file
 
 	error_t Filesystem_interface::close(Fd_t fd)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available) return 0;
 
 		// Step 1: Get file decriptior pointer
@@ -297,10 +326,7 @@ namespace file
 			const auto find = std::find_if(
 				file_descriptors.begin(),
 				file_descriptors.end(),
-				[fd_ptr](const auto& ptr) -> bool
-				{
-					return ptr.get() == fd_ptr;
-				}
+				[fd_ptr](const auto& ptr) -> bool { return ptr.get() == fd_ptr; }
 			);
 
 			if (find != file_descriptors.end())
@@ -322,6 +348,8 @@ namespace file
 
 	int Filesystem_interface::ftruncate(Fd_t fd, off_t length)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available)
 		{
 			errno = EBADF;
@@ -340,6 +368,8 @@ namespace file
 
 	Fd_t Filesystem_interface::dup(Fd_t oldfd)
 	{
+		const util::Scoped_lock lock;
+
 		const auto avail_fd = get_available_fd();
 		if ((size_t)avail_fd >= file_descriptor_map.size()) file_descriptor_map.resize(avail_fd + 1, nullptr);
 
@@ -356,6 +386,8 @@ namespace file
 
 	Fd_t Filesystem_interface::dup2(Fd_t oldfd, Fd_t newfd)
 	{
+		const util::Scoped_lock lock;
+
 		if (oldfd == newfd) return newfd;
 
 		if (newfd < 0) return EBADF;
@@ -380,6 +412,8 @@ namespace file
 
 	int Filesystem_interface::open(Fd_t& fd, std::string_view path, int flags, mode_t mode)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available) return 0;
 
 		// Step 1: Split path and check if start with root
@@ -419,13 +453,15 @@ namespace file
 
 		// Step 5: Add fd to list
 		fd = avail_fd;
-		const auto [iter, success] = file_descriptors.emplace(std::make_unique<File_descriptor_container>(
-			std::move(file_descriptor),
-			1,
-			device_id,
-			(flags & 0x3) == O_RDONLY || (flags & 0x3) == O_RDWR,
-			(flags & 0x3) == O_WRONLY || (flags & 0x3) == O_RDWR
-		));
+		const auto [iter, success] = file_descriptors.emplace(
+			std::make_unique<File_descriptor_container>(
+				std::move(file_descriptor),
+				1,
+				device_id,
+				(flags & 0x3) == O_RDONLY || (flags & 0x3) == O_RDWR,
+				(flags & 0x3) == O_WRONLY || (flags & 0x3) == O_RDWR
+			)
+		);
 
 		if (!success)
 		{
@@ -440,6 +476,8 @@ namespace file
 
 	error_t Filesystem_interface::stat(std::string_view path, struct stat& info)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available) return 0;
 
 		// Step 1: Split path and check if start with root
@@ -463,6 +501,8 @@ namespace file
 
 	error_t Filesystem_interface::unlink(std::string_view path)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available) return 0;
 
 		// Step 1: Split path and check if start with root
@@ -480,6 +520,8 @@ namespace file
 
 	error_t Filesystem_interface::link(std::string_view oldname, std::string_view newname)
 	{
+		const util::Scoped_lock lock;
+
 		if (!fs_available) return 0;
 
 		// Step 1: Split path and check if start with root

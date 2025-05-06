@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <ctime>
 
+#include <unistd.h>
+
 namespace platform::kintex7
 {
 	inline constexpr uint32_t frequency_khz = 200000;
@@ -19,6 +21,5 @@ extern "C"
 {
 	clock_t _times(struct tms* buf);
 	int _gettimeofday(struct timeval*, void*);
-
-	unsigned int sleep(unsigned int time);
+	int usleep(useconds_t usec);
 }

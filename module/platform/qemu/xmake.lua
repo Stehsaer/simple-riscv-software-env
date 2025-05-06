@@ -41,10 +41,10 @@ rule("platform.qemu.run")
 		local bin_path = ""
 
 		for _, v in ipairs(argv) do
-			if v == "-debug" then
+			if v == "--debug" then
 				extra_args = extra_args .. " -s -S"
 			end
-			if v:startswith("-bin=") then
+			if v:startswith("--bin=") then
 				bin_path = v:sub(6)
 			end
 		end

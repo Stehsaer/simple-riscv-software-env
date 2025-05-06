@@ -13,4 +13,9 @@ namespace file
 	Environment env = {};
 	bool fs_available = false;
 	Filesystem_interface& fs = env.fs;
+
+#ifdef RVISA_A
+	Mutex fs_mutex;
+#endif
+
 }

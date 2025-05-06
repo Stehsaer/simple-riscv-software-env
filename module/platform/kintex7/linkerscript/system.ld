@@ -87,7 +87,8 @@ SECTIONS
 
 	PROVIDE(_tbss_start = ADDR(.tbss));
 	PROVIDE(_tbss_size = SIZEOF(.tbss));
-	PROVIDE(_thread_pointer_init = ADDR(.tdata));
+	PROVIDE(_tdata_start = ADDR(.tdata));
+	PROVIDE(_tdata_size = SIZEOF(.tdata));
 
 	.heap ALIGN(1024) :
 	{

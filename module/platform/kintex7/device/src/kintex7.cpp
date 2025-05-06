@@ -21,9 +21,9 @@ namespace platform::kintex7
 
 extern "C"
 {
-	unsigned int sleep(unsigned int time)
+	unsigned int sleep(unsigned int __seconds)
 	{
-		const uint64_t ticks = time * CLOCKS_PER_SEC;
+		const uint64_t ticks = __seconds * CLOCKS_PER_SEC;
 		const uint64_t start = platform::kintex7::get_us();
 		while (platform::kintex7::get_us() - start < ticks)
 		{
@@ -59,6 +59,16 @@ extern "C"
 		time->tv_sec = (time_us / 1000000) & 0xFFFFFFFF;
 		time->tv_usec = time_us % 1000000;
 
+		return 0;
+	}
+
+	int usleep(useconds_t usec)
+	{
+		const uint64_t ticks = usec * CLOCKS_PER_SEC / 1000000ull;
+		const uint64_t start = platform::kintex7::get_us();
+		while (platform::kintex7::get_us() - start < ticks)
+		{
+		}
 		return 0;
 	}
 }

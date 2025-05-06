@@ -15,7 +15,7 @@ _start:
 	sw a1, 24(sp)
 
 	# Initialize thread pointer
-	la tp, _thread_pointer_init
+	la tp, _tdata_start
 
 	# Initialize global pointer
 .option push

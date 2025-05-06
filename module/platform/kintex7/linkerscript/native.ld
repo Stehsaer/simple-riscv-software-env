@@ -82,6 +82,25 @@ SECTIONS
 		
 	} > DATA_RAM
 
+	.tdata ALIGN(16) : 
+	{ 
+		*(.tdata)
+		*(.tdata.*)
+
+	} > DATA_RAM AT>FLASH
+
+	.tbss ALIGN(16) : 
+	{ 
+		*(.tbss)
+		*(.tbss.*)
+
+	} > DATA_RAM
+
+	PROVIDE(_tbss_start = ADDR(.tbss));
+	PROVIDE(_tbss_size = SIZEOF(.tbss));
+	PROVIDE(_tdata_start = LOADADDR(.tdata));
+	PROVIDE(_tdata_size = SIZEOF(.tdata));
+
 	PROVIDE(_bss_start = ADDR(.bss));
 	PROVIDE(_bss_size = SIZEOF(.bss));
 	
