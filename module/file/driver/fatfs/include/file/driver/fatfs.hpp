@@ -6,6 +6,7 @@
 #include "file/interface.hpp"
 
 #include <memory>
+#include <optional>
 
 namespace file::driver::fatfs
 {
@@ -48,8 +49,11 @@ namespace file::driver::fatfs
 
 		Device() = default;
 
-		std::pair<error_t, std::unique_ptr<file::File_descriptor>> open(std::string_view path, int flags, mode_t mode) noexcept
-			override;
+		std::pair<error_t, std::unique_ptr<file::File_descriptor>> open(
+			std::string_view path,
+			int flags,
+			mode_t mode
+		) noexcept override;
 		error_t stat(std::string_view path, struct stat& info) noexcept override;
 		error_t unlink(std::string_view path) noexcept override;
 		error_t link(std::string_view oldname, std::string_view newname) noexcept override;

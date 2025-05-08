@@ -1,5 +1,7 @@
 #include "device/qemu.hpp"
 
+#include <ctime>
+
 namespace platform::qemu
 {
 	extern device::qemu::Uart& uart;

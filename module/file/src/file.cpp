@@ -4,6 +4,8 @@
 #include <fcntl.h>
 #include <sys/unistd.h>
 
+#include <algorithm>
+
 namespace file
 {
 	namespace util

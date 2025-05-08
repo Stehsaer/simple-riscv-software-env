@@ -1,6 +1,8 @@
 target("project.os-class.lab5")
 
 	set_kind("binary")
+	-- set_enabled(has_isa("a"))
+
 	add_files("main.cpp", "linkscript.ld")
 	add_files("*.S")
 	add_deps(
@@ -15,6 +17,8 @@ target("project.os-class.lab5")
 		"platform.qemu.run",
 		"generate.qemu-flash"
 	)
+
+target_end()
 
 target("project.os-class.lab5.va")
 
@@ -34,3 +38,4 @@ target("project.os-class.lab5.va")
 		"generate.qemu-flash",
 		"platform.qemu.full-native"
 	)
+target_end()
