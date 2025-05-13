@@ -14,7 +14,7 @@
 #include <platform/qemu.hpp>
 
 #ifndef RVISA_A
-#error "Requires Atomic extension to work!"
+#error Requires Atomic extension to work!
 #endif
 
 extern "C"

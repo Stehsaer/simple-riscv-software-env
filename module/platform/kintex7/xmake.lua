@@ -26,7 +26,7 @@ rule("platform.kintex7.native", function()
 		target:add("deps", "platform.generic-boot", "platform.kintex7")
 	end)
 
-	add_deps("generate.coe")
+	add_deps("generate.coe", {order=true})
 end)
 
 rule("platform.kintex7.nommu-program", function()
