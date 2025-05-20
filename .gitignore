@@ -14,5 +14,5 @@ project/*
 build/*
 .VSCodeCounter/*
 .xmake/*
-archive/*
+.archive/*
 .vscode

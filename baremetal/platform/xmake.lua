@@ -1,0 +1,1 @@
+includes("kintex7", "qemu")

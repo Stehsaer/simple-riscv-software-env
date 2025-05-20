@@ -1,13 +1,11 @@
+#include "filesystem.hpp"
 #include <cstdarg>
-#include <file/driver/uart.hpp>
-#include <file/interface.hpp>
 #include <iostream>
-#include <platform/qemu.hpp>
 
 static void init_environment()
 {
-	auto& uart = platform::qemu::uart;
-	file::fs.mount_device("uart:/", std::make_unique<file::driver::qemu::Uart_driver>(uart));
+	auto& uart = platform::uart;
+	filesystem::fs.mount_device("uart:/", std::make_unique<filesystem::driver::Serial>(uart));
 	freopen("uart:/", "w", stdout);
 }
 

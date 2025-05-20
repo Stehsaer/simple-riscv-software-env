@@ -24,6 +24,8 @@ The project depends on [RISCV GNU Toolchain](https://github.com/riscv-collab/ris
   warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
   ```
 
+In THEORY, you should be able to build this project using any RISCV GCC that supports C++23. Currently GCC 14.2.0 and GCC 15.1.0 are known to work.
+
 ### Xmake
 
 This project uses Xmake as the building system and package manager. Get Xmake from [here](https://github.com/xmake-io/xmake).
@@ -50,34 +52,30 @@ For sub-projects built for QEMU, use `xmake run` to see the results. For sub-pro
 
 ## Project Structure
 
-### Modules
+### Baremetal Modules
 
-`Modules` provides the basic environment in a modular manner. Combine different modules together to support different features. Examples are:
+Baremetal modules provides the basic supporting environment for baremetal execution in a modular manner. Combine different modules together to support different features.
 
-- Dynamic Allocation: `allocator`
-- Emulated File System: `file.interface`
-- Fatfs: `file.driver.fatfs`
-  - Additional SD card backend: `file.driver.fatfs.backend.sd`
+- `baremetal.allocator`: Heap allocator. Needs `_heap_start` and `_heap_end` from linkerscript
+- `baremetal.filesystem`: Simple filesystem to mount devices and support POSIX APIs
+- `baremetal.mutex`: Simple mutex implementation
+- `baremetal.platform`: Contains platform-specific code that implements the baremetal modules
+  - Kintex7 Platform: supports SD card file accessing and UART serial input/output
+  - QEMU Platform: supports reading from virtual disk and UART serial input/output. Writing to virtual disk is broken and doesn't work.
+- `baremetal.time`: Provides time query functions for Newlib and implements 2 spin-locked sleep functions (`sleep` and `usleep`).
 
-However some modules are essential:
+### Platforms
 
-- `device`: Provides class/interfaces to different device across different platforms.
-- `platform`: Provides platform-specific definitions for devices, eg. Clocks, SPI, Serial...
-- `start.*`: Provides startup assembly programs that kick-starts the platform by setting up Stack Pointers, copying data from LMA to VMA etc.
+#### Kintex7
 
-#### Platforms
+"Kintex7" refers to the FPGA chip model `7k410t-ffg900-2` I'm using for my CPU design projects. Without the Vivado project file / block-design file, it may not be easy to figure out the exact usage of the sub-projects. Progress is being made to make this publicly accessible. For details see https://github.com/Stehsaer/simple-riscv-cpu-design and also the device definitions and their corresponding addresses.
 
-##### Kintex7
+#### QEMU
 
-"Kintex7" refers to the FPGA chip model `7k410t-ffg900-2` I'm using for my CPU design projects. Without the Vivado project file / block-design file, it may not be easy to figure out the exact usage of the sub-projects. Progress is being made to make this publicly accessible. For details see [my CPU design project](https://github.com/Stehsaer/simple-riscv-cpu-design) and also the device definitions and their corresponding addresses.
-
-##### QEMU
-
-Sub-projects for QEMU platforms are mainly for the college course "Operating System" I currently take (by Mar. 2025). QEMU documentations are publicly available.
+QEMU platforms are mainly for the college course "Operating System" I currently take (by Mar. 2025). QEMU documentations are publicly available. This project uses the `virt` platform of RISC-V QEMU.
 
 ### Projects
 
 This project also contains some sub-projects for different purposes.
 
-- `kintex7-test`: for testing purposes only. May exclude from the repository in the future.
 - `os-class`: for lab assignments from my Operating System course. (Side-note: the course documentation is written for X86, but it also allows for other ISAs and languages, so I decided to go with RISC-V and C++)

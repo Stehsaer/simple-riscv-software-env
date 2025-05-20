@@ -8,10 +8,7 @@
 #include <system_error>
 #include <vector>
 
-#include <file/driver/fatfs/backend/virtio.hpp>
-#include <file/driver/uart.hpp>
-#include <file/interface.hpp>
-#include <platform/qemu.hpp>
+#include "filesystem.hpp"
 
 constexpr size_t min_address = 0x8010'0000;
 constexpr size_t max_address = 0xFFF0'0000;
@@ -24,7 +21,7 @@ constexpr size_t max_address = 0xFFF0'0000;
 
 #define ERROR_PREFIX_STRING ANSI_ERR_COLOR ANSI_BOLD "Error:" ANSI_RESET_COLOR " "
 
-using namespace device::qemu::virtio;
+using namespace device::virtio;
 
 class File_raii
 {
@@ -68,7 +65,10 @@ namespace elf
 		Elf32_Half e_shnum;
 		Elf32_Half e_shstrndx;
 
-		bool check_magic() const { return e_ident[0] == 0x7F && e_ident[1] == 'E' && e_ident[2] == 'L' && e_ident[3] == 'F'; }
+		bool check_magic() const
+		{
+			return e_ident[0] == 0x7F && e_ident[1] == 'E' && e_ident[2] == 'L' && e_ident[3] == 'F';
+		}
 		bool is_riscv() const { return e_machine == 243; }
 		bool is_executable() const { return e_type == 2; }
 	};
@@ -225,11 +225,13 @@ std::optional<Program_load_result> load_file(const char* path)
 				return std::nullopt;
 			}
 
-			if (program_header.p_vaddr < min_address || program_header.p_vaddr + program_header.p_memsz >= max_address)
+			if (program_header.p_vaddr < min_address
+				|| program_header.p_vaddr + program_header.p_memsz >= max_address)
 			{
 				printf(ERROR_PREFIX_STRING "Segment error: memory address out of range\n");
 				printf(
-					"-- Detail:\n  -- Acceptable range: 0x%08X - 0x%08X\n  -- Segment range: 0x%08X - 0x%08X\n",
+					"-- Detail:\n  -- Acceptable range: 0x%08X - 0x%08X\n  -- Segment range: 0x%08X - "
+					"0x%08X\n",
 					min_address,
 					max_address,
 					program_header.p_vaddr,
@@ -275,7 +277,11 @@ std::optional<Program_load_result> load_file(const char* path)
 
 	asm volatile("fence.i");
 
-	printf("Program loaded successfully!\n-- Entry point: 0x%08X\n-- Size: %d Bytes\n", elf_header.e_entry, total_size);
+	printf(
+		"Program loaded successfully!\n-- Entry point: 0x%08X\n-- Size: %d Bytes\n",
+		elf_header.e_entry,
+		total_size
+	);
 
 	return Program_load_result{elf_header.e_entry};
 }
@@ -310,8 +316,8 @@ IO* find_device()
 
 int main()
 {
-	auto& uart = platform::qemu::uart;
-	file::fs.mount_device("uart:/", std::make_unique<file::driver::qemu::Uart_driver>(uart));
+	auto& uart = platform::uart;
+	filesystem::fs.mount_device("uart:/", std::make_unique<filesystem::driver::Serial>(uart));
 
 	freopen("uart:/", "w", stdout);
 
@@ -325,21 +331,26 @@ int main()
 
 	std::println("Found Virtio device at 0x{:08X}", (size_t)virtio);
 
-	file::driver::fatfs::media_interface = std::make_unique<file::driver::fatfs::backend::virtio::Media_interface>(*virtio);
+	filesystem::driver::fatfs::media_interface
+		= std::make_unique<filesystem::driver::fatfs::backend::virtio::Media_interface>(*virtio);
 
 	while (true)
 	{
-		const auto mount_disk_result = file::driver::fatfs::mount_disk();
+		const auto mount_disk_result = filesystem::driver::fatfs::mount_disk();
 		if (mount_disk_result.has_value())
 		{
-			std::println(ERROR_PREFIX_STRING "Failed to mount disk: {}, retrying", (int)mount_disk_result.value());
+			std::println(
+				ERROR_PREFIX_STRING "Failed to mount disk: {}, retrying",
+				(int)mount_disk_result.value()
+			);
 			continue;
 		}
 
 		break;
 	}
 
-	const auto mount_result = file::fs.mount_device("virtio:/", std::make_unique<file::driver::fatfs::Device>());
+	const auto mount_result
+		= filesystem::fs.mount_device("virtio:/", std::make_unique<filesystem::driver::fatfs::Device>());
 
 	if (mount_result != 0)
 	{

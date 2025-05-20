@@ -6,4 +6,6 @@ else
 	ARCH=$2
 fi
 
-xmake f -a $ARCH -m $1 -c -p bare-metal
+EXTRA_ARGS="${@:3}"
+
+xmake f -a $ARCH -m $1 -c -p bare-metal $EXTRA_ARGS

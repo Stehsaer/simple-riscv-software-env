@@ -1,1 +1,1 @@
-includes("*/xmake.lua")
+includes("kintex7", "os-class")

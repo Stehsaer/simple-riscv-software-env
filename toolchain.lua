@@ -2,12 +2,6 @@ set_config("ccprefix", "riscv64-unknown-elf")
 -- set_config("branch_cost", 5)
 set_config("nano_libc", false)
 
-isa_arch_list = {}
-
-function has_isa(arch)
-    return table.contains(isa_arch_list, arch)
-end
-
 toolchain("riscv-gcc-baremetal")
 
     set_kind('standalone')
@@ -32,7 +26,7 @@ toolchain("riscv-gcc-baremetal")
 	set_toolset('as', toolchain_prefix .. '-g++')
 	set_toolset('strip', toolchain_prefix .. '-strip')
 	set_toolset('ld', toolchain_prefix .. '-ld')
-	set_toolset('ar', toolchain_prefix .. '-gcc-ar')
+	set_toolset('ar', toolchain_prefix .. '-ar')
 	set_toolset('sh', toolchain_prefix .. '-ld')
 
     if is_mode("release") or is_mode("releasedbg") then
@@ -67,39 +61,7 @@ toolchain("riscv-gcc-baremetal")
             toolchain:add('defines', flags)
         end
 
-        local function parse_arch_string(arch_string)
-            local arch_match = arch_string:match("rv%d%d(.*)")
-
-            if arch_match == nil then
-                return nil
-            end
-
-            local split_result = arch_match:split("_")
-
-            local single_letters = {}
-
-            for letter in split_result[1]:gmatch(".") do
-                table.insert(single_letters, letter)
-            end
-
-            local concated_table = (table.concat(single_letters, "_") .. "_" .. table.concat(split_result, "_", 2)):split(
-                "_")
-
-            -- Atomic
-
-            if table.contains(concated_table, "a") and not table.contains(concated_table, "zaamo") then
-                table.insert(concated_table, "zaamo")
-            end
-            if table.contains(concated_table, "a") and not table.contains(concated_table, "zalrsc") then
-                table.insert(concated_table, "zalrsc")
-            end
-            if table.contains(concated_table, "zaamo") and table.contains(concated_table, "zalrsc") and not table.contains(concated_table, "a") then
-                table.insert(concated_table, "a")
-            end
-
-            table.sort(concated_table)
-            return concated_table
-        end
+        import("lua_func.parse_arch_string", {alias="parse_arch_string"})
 
         local function get_table_length(t)
             local count = 0
@@ -157,6 +119,7 @@ toolchain("riscv-gcc-baremetal")
         local ext_list = parse_arch_string(arch_string)
         for _, ext in ipairs(ext_list) do
             add_defines("RVISA_" .. ext:upper())
+            config.set("rvext_"..ext, true)
         end
         
         add_asflags('-nostartfiles')
@@ -165,8 +128,6 @@ toolchain("riscv-gcc-baremetal")
         add_cxflags('-march=' .. arch_string)
         add_cxflags('-mabi=ilp32')
         add_cxflags("-ffunction-sections", "-fdata-sections", "-fomit-frame-pointer")
-
-        isa_arch_list = parse_arch_string(arch_string)
 
         -- Get compiler binary path
         local compiler_path = ""

@@ -4,14 +4,14 @@ target("project.os-class.lab4.main")
 	add_files("main.cpp")
 	add_files("*.S")
 	add_deps(
-		"platform.qemu", 
-		"platform.generic-boot",
-		"file.interface",
-		"file.driver.uart"
+		"baremetal.platform.qemu",
+		"boot.stage0"
 	)
 
 	add_rules(
-		"platform.qemu.native",
-		"report-size",
-		"platform.qemu.run"
+		"generate.qemu-flash",
+		"platform.qemu.config",
+		"platform.qemu.run",
+		"boot.link.stage0",
+		"report-size"
 	)

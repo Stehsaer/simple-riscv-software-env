@@ -2,14 +2,11 @@
 #include <print>
 #include <vector>
 
-#include <file/driver/fatfs/backend/virtio.hpp>
-#include <file/driver/uart.hpp>
-#include <file/interface.hpp>
-#include <platform/qemu.hpp>
+#include "filesystem.hpp"
 
-using namespace device::qemu::virtio;
+using namespace device::virtio;
 
-namespace file::driver::fatfs
+namespace filesystem::driver::fatfs
 {
 	extern std::unique_ptr<FATFS> fs;
 }
@@ -44,8 +41,8 @@ IO* find_device()
 
 int main()
 {
-	auto& uart = platform::qemu::uart;
-	file::fs.mount_device("uart:/", std::make_unique<file::driver::qemu::Uart_driver>(uart));
+	auto& uart = platform::uart;
+	filesystem::fs.mount_device("uart:/", std::make_unique<filesystem::driver::Serial>(uart));
 
 	freopen("uart:/", "w", stdout);
 
@@ -59,11 +56,12 @@ int main()
 
 	std::println("Found Virtio device at 0x{:08X}", (size_t)virtio);
 
-	file::driver::fatfs::media_interface = std::make_unique<file::driver::fatfs::backend::virtio::Media_interface>(*virtio);
+	filesystem::driver::fatfs::media_interface
+		= std::make_unique<filesystem::driver::fatfs::backend::virtio::Media_interface>(*virtio);
 
 	while (true)
 	{
-		const auto mount_disk_result = file::driver::fatfs::mount_disk();
+		const auto mount_disk_result = filesystem::driver::fatfs::mount_disk();
 		if (mount_disk_result.has_value())
 		{
 			std::println("Failed to mount disk: {}, retrying", (int)mount_disk_result.value());
@@ -73,7 +71,8 @@ int main()
 		break;
 	}
 
-	const auto mount_result = file::fs.mount_device("virtio:/", std::make_unique<file::driver::fatfs::Device>());
+	const auto mount_result
+		= filesystem::fs.mount_device("virtio:/", std::make_unique<filesystem::driver::fatfs::Device>());
 
 	if (mount_result != 0)
 	{
@@ -87,7 +86,7 @@ int main()
 	if (file == nullptr)
 	{
 		std::println("Failed to open file");
-		std::println("Last Failure: {}", (int)file::driver::fatfs::last_failure);
+		std::println("Last Failure: {}", (int)filesystem::driver::fatfs::last_failure);
 		std::println("Error: {}", (int)errno);
 		return 1;
 	}

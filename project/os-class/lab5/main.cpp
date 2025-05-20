@@ -8,10 +8,7 @@
 #include <thread>
 #include <vector>
 
-#include <device/csr-timer.hpp>
-#include <file/driver/uart.hpp>
-#include <file/interface.hpp>
-#include <platform/qemu.hpp>
+#include "filesystem.hpp"
 
 #ifndef RVISA_A
 #error Requires Atomic extension to work!
@@ -181,8 +178,8 @@ namespace
 
 	void init_environment()
 	{
-		auto& uart = platform::qemu::uart;
-		file::fs.mount_device("uart:/", std::make_unique<file::driver::qemu::Uart_driver>(uart));
+		auto& uart = platform::uart;
+		filesystem::fs.mount_device("uart:/", std::make_unique<filesystem::driver::Serial>(uart));
 		freopen("uart:/", "w", stdout);
 	}
 
@@ -192,7 +189,7 @@ namespace
 		{
 			scheduler->tick();
 			const auto prev_timecmp = csr_get_timecmp();
-			csr_set_timecmp(prev_timecmp + platform::qemu::mtime_rate * config::interrupt_interval_ms / 1000);
+			csr_set_timecmp(prev_timecmp + platform::mtime_rate * config::interrupt_interval_ms / 1000);
 		}
 
 		void init_interrupt();

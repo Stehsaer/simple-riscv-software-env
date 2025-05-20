@@ -1,0 +1,1 @@
+includes("common", "kintex7", "qemu")
