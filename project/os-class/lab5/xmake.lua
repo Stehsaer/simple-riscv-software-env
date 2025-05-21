@@ -14,7 +14,7 @@ target("project.os-class.lab5")
 		"generate.qemu-flash",
 		"platform.qemu.config",
 		"platform.qemu.run",
-		"boot.link.stage0",
+		"link.stage0",
 		"report-size"
 	)
 
@@ -34,7 +34,7 @@ target("project.os-class.lab5.va")
 		"generate.qemu-flash",
 		"platform.qemu.config",
 		"platform.qemu.run",
-		"boot.link.stage0",
+		"link.stage0",
 		"report-size"
 	)
 target_end()

@@ -26,7 +26,7 @@ target("project.os-class.lab6.scene1.spinlock")
 		"generate.qemu-flash",
 		"platform.qemu.config",
 		"platform.qemu.run",
-		"boot.link.stage0",
+		"link.stage0",
 		"report-size"
 	)
 
@@ -46,7 +46,7 @@ target("project.os-class.lab6.scene1.semaphore")
 		"generate.qemu-flash",
 		"platform.qemu.config",
 		"platform.qemu.run",
-		"boot.link.stage0",
+		"link.stage0",
 		"report-size"
 	)
 
@@ -66,7 +66,7 @@ target("project.os-class.lab6.scene2.bad")
 		"generate.qemu-flash",
 		"platform.qemu.config",
 		"platform.qemu.run",
-		"boot.link.stage0",
+		"link.stage0",
 		"report-size"
 	)
 
@@ -86,7 +86,7 @@ target("project.os-class.lab6.scene2.good")
 		"generate.qemu-flash",
 		"platform.qemu.config",
 		"platform.qemu.run",
-		"boot.link.stage0",
+		"link.stage0",
 		"report-size"
 	)
 
@@ -106,6 +106,6 @@ target("project.os-class.lab6.scene3")
 		"generate.qemu-flash",
 		"platform.qemu.config",
 		"platform.qemu.run",
-		"boot.link.stage0",
+		"link.stage0",
 		"report-size"
 	)

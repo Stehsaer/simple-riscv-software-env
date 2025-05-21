@@ -1,1 +1,1 @@
-includes("kintex7", "os-class")
+includes("*")

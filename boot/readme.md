@@ -13,6 +13,7 @@ Bare-metal test programs
 ### Stage 0 (Memory Limited Variant)
 
 - Same as Stage 0, but memory usage (`.data`+`.bss`+heap) is limited to 256KiB
+- Exception is turned off. No exception info is kept in the program
 
 #### Usage
 

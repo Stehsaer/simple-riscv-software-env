@@ -7,7 +7,6 @@
 
 _start:
 	la sp, _stack_top
-	add sp, sp, -16
 
 .option push
 .option norelax
@@ -32,19 +31,14 @@ _start:
 
 	# Execute CTOR
 
-	la t0, _ctor_start
+	la s0, _ctor_start
 
 	cpp_ctor:
-		la t1, _ctor_end
-		beq t0, t1, cpp_ctor_end
-
-		lw t2, 0(t0)
-
-		sw t0, 4(sp)
-		jalr t2
-		lw t0, 4(sp)
-
-		add t0, t0, 4
+		la s1, _ctor_end
+		beq s0, s1, cpp_ctor_end
+		lw s2, 0(s0)
+		jalr s2
+		add s0, s0, 4
 		j cpp_ctor
 
 	cpp_ctor_end:
@@ -55,19 +49,13 @@ _start:
 
 	# Execute DTOR
 
-	la t0, _dtor_start
-
+	la s0, _dtor_start
 	cpp_dtor:
-		la t1, _dtor_end
-		beq t0, t1, cpp_dtor_end
-
-		lw t2, 0(t0)
-
-		sw t0, 4(sp)
-		jalr t2
-		lw t0, 4(sp)
-
-		add t0, t0, 4
+		la s1, _dtor_end
+		beq s0, s1, cpp_dtor_end
+		lw s2, 0(s0)
+		jalr s2
+		add s0, s0, 4
 		j cpp_dtor
 
 	cpp_dtor_end:

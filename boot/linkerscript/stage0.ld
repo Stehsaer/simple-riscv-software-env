@@ -17,6 +17,7 @@ SECTIONS
 
 	.rodata ALIGN(16) : {
 		INCLUDE rodata.ld
+		INCLUDE except_table.ld
 	} > ROM
 
 	. = ORIGIN(RAM);

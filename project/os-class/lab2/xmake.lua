@@ -11,7 +11,7 @@ target("project.os-class.lab2.screen")
 		"generate.qemu-flash",
 		"platform.qemu.config",
 		"platform.qemu.run",
-		"boot.link.stage0",
+		"link.stage0",
 		"report-size"
 	)
 
@@ -30,7 +30,7 @@ target("project.os-class.lab2.helloworld")
 		"generate.qemu-flash",
 		"platform.qemu.config",
 		"platform.qemu.run",
-		"boot.link.stage0",
+		"link.stage0",
 		"report-size"
 	)
 

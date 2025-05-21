@@ -12,6 +12,6 @@ target("project.os-class.lab4.main")
 		"generate.qemu-flash",
 		"platform.qemu.config",
 		"platform.qemu.run",
-		"boot.link.stage0",
+		"link.stage0",
 		"report-size"
 	)

@@ -18,6 +18,7 @@ SECTIONS
 	.rodata ALIGN(16) : 
 	{
 		INCLUDE rodata.ld
+		INCLUDE except_table.ld
 	} > RAM
 
 	.data ALIGN(16) : 
