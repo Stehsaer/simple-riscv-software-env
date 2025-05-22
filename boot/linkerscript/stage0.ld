@@ -35,8 +35,8 @@ SECTIONS
 	INCLUDE stage0_const.ld
 	
 	PROVIDE(_heap_start = ALIGN(ADDR(.bss) + SIZEOF(.bss), 1024));
-	PROVIDE(_heap_end = RAM_BASE + RAM_SIZE - STACK_SIZE );
-	PROVIDE(_stack_top = ORIGIN(RAM) + RAM_SIZE);
+	PROVIDE(_heap_end = ORIGIN(RAM) + LENGTH(RAM) - STACK_SIZE );
+	PROVIDE(_stack_top = ORIGIN(RAM) + LENGTH(RAM));
 }
 
 ENTRY(_start)

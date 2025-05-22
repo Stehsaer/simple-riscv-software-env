@@ -3,7 +3,7 @@ INCLUDE general_config.ld
 
 MEMORY
 {
-	RAM (rwx) : ORIGIN = RAM_BASE + MEM_LIMIT, LENGTH = RAM_SIZE + MEM_LIMIT
+	RAM (rwx) : ORIGIN = RAM_BASE + MEM_LIMIT, LENGTH = RAM_SIZE - MEM_LIMIT
 }
 
 SECTIONS
@@ -51,7 +51,7 @@ SECTIONS
 	.heap ALIGN(1024) :
 	{
 		PROVIDE(_heap_start = .);
-		PROVIDE(_heap_end = RAM_BASE + RAM_SIZE - STACK_SIZE);
+		PROVIDE(_heap_end = ORIGIN(RAM) + LENGTH(RAM) - STACK_SIZE);
 	} > RAM
 }
 

@@ -31,15 +31,11 @@ rule("report-size", function()
 		import("core.project.config")
 		local toolchain_prefix = config.get("ccprefix")
 
-		local targetfile = target:targetfile()
-
-		local output, _ = os.iorun(toolchain_prefix .. "-size --format=Berkeley %s", target:targetfile())
-
-		local data = output:split("\n")[2]:split("%s+")
-
-		local text_size = tonumber(data[1])
-		local data_size = tonumber(data[2])
-		local bss_size = tonumber(data[3])
+		local objsize_output, _ = os.iorun(toolchain_prefix .. "-size --format=Berkeley %s", target:targetfile())
+		local objsize_data = objsize_output:split("\n")[2]:split("%s+")
+		local text_size = tonumber(objsize_data[1])
+		local data_size = tonumber(objsize_data[2])
+		local bss_size = tonumber(objsize_data[3])
 
 		cprint("╭─${bright white}[Size Report] ${clear}(%s)", target:name())
 		cprint("│◦ text  : %d \t(%dK + %d)", text_size, math.floor(text_size / 1024), text_size % 1024)
