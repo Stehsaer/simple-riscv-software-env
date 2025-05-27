@@ -62,58 +62,6 @@ toolchain("riscv-gcc-baremetal")
         end
 
         import("lua_func.parse_arch_string", {alias="parse_arch_string"})
-
-        local function get_table_length(t)
-            local count = 0
-            for a, b in pairs(t) do
-                if b ~= nil then
-                    count = count + 1
-                end
-            end
-            return count
-        end
-
-        local function arch_table_equal(table1, table2)
-            if get_table_length(table1) ~= get_table_length(table2) then
-                return false
-            end
-
-            for _, value in ipairs(table1) do
-                if not table.contains(table2, value) then
-                    return false
-                end
-            end
-
-            return true
-        end
-
-        local function get_lib_path(arch_string, compiler_path, lib_dir)
-            local arch = parse_arch_string(arch_string)
-            local dirs = os.dirs(compiler_path .. lib_dir .. "/*")
-            local filtered_dirs = {}
-
-            for _, dir in ipairs(dirs) do
-                local basename = path.basename(dir)
-                local parsed = parse_arch_string(basename)
-                if parsed ~= nil then
-                    filtered_dirs[dir] = parsed
-                end
-            end
-
-            for dir, parse in pairs(filtered_dirs) do
-                if arch_table_equal(arch, parse) then
-                    return dir .. "/ilp32"
-                end
-            end
-
-            return nil
-        end
-
-        local function get_compiler_version(toolchain_prefix)
-            local version_output = os.iorun(toolchain_prefix .. "-gcc --version")
-            local version = version_output:match("%(.-%) (%d+%.%d+%.%d+)")
-            return version
-        end
         
         -- Add defines
         local ext_list = parse_arch_string(arch_string)
@@ -129,34 +77,12 @@ toolchain("riscv-gcc-baremetal")
         add_cxflags('-mabi=ilp32')
         add_cxflags("-ffunction-sections", "-fdata-sections", "-fomit-frame-pointer")
 
-        -- Get compiler binary path
-        local compiler_path = ""
-        if os.is_host("windows") then
-            compiler_path = path.directory((os.iorun("where " .. toolchain_prefix .. "-gcc")):split('\n')[1]:gsub("\\", "/"))  .. "/../"
-        elseif os.is_host("linux") then
-            compiler_path = string.trim(path.directory(os.iorun("which " .. toolchain_prefix .. "-gcc"))) .. "/../"
-        end
-        
-        -- Add library paths
-        local compiler_version = get_compiler_version(toolchain_prefix)
-        if compiler_version == nil then
-            raise("Compiler version not found. Please check the toolchain prefix.")
-        end
-        
-        local lib_dir_list = {
-            string.format("%s/lib", toolchain_prefix),
-            string.format("lib/gcc/%s/%s", toolchain_prefix, compiler_version),
-        }
+        local libgcc_path = path.directory(os.iorun(string.format("%s-gcc -march=%s -mabi=ilp32 --print-libgcc-file-name", toolchain_prefix, arch_string)))
+        local multi_directory = string.trim(os.iorun(string.format("%s-gcc -march=%s -mabi=ilp32 --print-multi-directory", toolchain_prefix, arch_string)))
+        local sysroot = string.trim(os.iorun(string.format("%s-gcc -march=%s -mabi=ilp32 --print-sysroot", toolchain_prefix, arch_string)))
 
-        for _, lib_dir in ipairs(lib_dir_list) do
-            local lib_path = get_lib_path(arch_string, compiler_path, lib_dir)
-            if lib_path == nil then
-                raise("Cannot find library path for arch: " .. arch_string)
-            end
-            add_ldflags('-L' .. lib_path)
-        end
-
-        -- General linker flags
+        add_ldflags(string.format("-L%s", libgcc_path))
+        add_ldflags(string.format("-L%s/lib/%s", sysroot, multi_directory))
         add_ldflags("-nostdlib --oformat=elf32-littleriscv")
         add_ldflags("--gc-sections -(")
     end)
