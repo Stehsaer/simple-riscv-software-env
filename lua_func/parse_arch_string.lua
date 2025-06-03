@@ -13,8 +13,7 @@ function main(arch_string)
 		table.insert(single_letters, letter)
 	end
 
-	local concated_table = (table.concat(single_letters, "_") .. "_" .. table.concat(split_result, "_", 2)):split(
-		"_")
+	local concated_table = (table.concat(single_letters, "_") .. "_" .. table.concat(split_result, "_", 2)):split("_")
 
 	-- Atomic
 

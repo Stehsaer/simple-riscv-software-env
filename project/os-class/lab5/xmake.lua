@@ -6,8 +6,7 @@ target("project.os-class.lab5")
 	add_files("main.cpp", "linkscript.ld")
 	add_files("*.S")
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(
@@ -26,8 +25,7 @@ target("project.os-class.lab5.va")
 	add_files("va.cpp")
 
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(

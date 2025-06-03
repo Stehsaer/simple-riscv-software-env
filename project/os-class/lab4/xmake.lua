@@ -4,8 +4,7 @@ target("project.os-class.lab4.main")
 	add_files("main.cpp")
 	add_files("*.S")
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(

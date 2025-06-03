@@ -3,8 +3,7 @@ target("project.os-class.lab2.screen")
 	set_kind("binary")
 	add_files("screen.cpp")
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(
@@ -22,8 +21,7 @@ target("project.os-class.lab2.helloworld")
 	set_kind("binary")
 	add_files("helloworld.cpp")
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(

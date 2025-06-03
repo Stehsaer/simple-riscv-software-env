@@ -45,6 +45,9 @@ _start:
 
 	# Execute CTOR
 
+	la a0, _eh_frame_start
+	call __register_frame
+
 	la t0, _ctor_start
 
 	cpp_ctor:

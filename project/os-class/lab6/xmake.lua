@@ -18,8 +18,7 @@ target("project.os-class.lab6.scene1.spinlock")
 	add_files("scene1/spinlock.cpp", "linkscript.ld", "scene1/test_and_set.S")
 
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(
@@ -38,8 +37,7 @@ target("project.os-class.lab6.scene1.semaphore")
 	add_files("scene1/semaphore.cpp", "linkscript.ld")
 
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(
@@ -58,8 +56,7 @@ target("project.os-class.lab6.scene2.bad")
 	add_files("scene2-bad.cpp", "linkscript.ld")
 
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(
@@ -78,8 +75,7 @@ target("project.os-class.lab6.scene2.good")
 	add_files("scene2-good.cpp", "linkscript.ld")
 
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(
@@ -98,8 +94,7 @@ target("project.os-class.lab6.scene3")
 	add_files("scene3.cpp", "linkscript.ld")
 
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(

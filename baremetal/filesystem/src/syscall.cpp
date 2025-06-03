@@ -60,9 +60,9 @@ extern "C"
 		return errno == 0 ? fd : -1;
 	}
 
-	int _write(int fd, const void* path, size_t mode)
+	int _write(int fd, const void* data, size_t size)
 	{
-		return filesystem::fs.write(fd, path, mode);
+		return filesystem::fs.write(fd, data, size);
 	}
 
 	_off_t _lseek(int fd, _off_t offset, int whence)

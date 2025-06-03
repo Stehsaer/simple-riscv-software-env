@@ -3,8 +3,7 @@ target("project.os-class.lab3.disk-io")
 	set_kind("binary")
 	add_files("disk-io.cpp")
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(
@@ -20,8 +19,7 @@ target("project.os-class.lab3.boot")
 	set_kind("binary")
 	add_files("boot.cpp")
 	add_deps(
-		"baremetal.platform.qemu",
-		"boot.stage0"
+		"baremetal.platform.qemu"
 	)
 
 	add_rules(

@@ -31,6 +31,11 @@ _start:
 
 	# Execute CTOR
 
+.ifndef STAGE0_MEMLIMIT
+	la a0, _eh_frame_start
+	call __register_frame
+.endif
+
 	la s0, _ctor_start
 
 	cpp_ctor:
