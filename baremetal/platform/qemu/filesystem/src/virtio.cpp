@@ -2,6 +2,11 @@
 
 namespace filesystem::driver::fatfs::backend::virtio
 {
+	Media_interface::~Media_interface()
+	{
+		interface.flush();
+	}
+
 	DSTATUS Media_interface::disk_initialize()
 	{
 		return RES_OK;

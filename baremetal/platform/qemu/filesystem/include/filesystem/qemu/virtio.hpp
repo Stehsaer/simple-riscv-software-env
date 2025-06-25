@@ -16,6 +16,8 @@ namespace filesystem::driver::fatfs::backend::virtio
 		{
 		}
 
+		virtual ~Media_interface();
+
 		DSTATUS disk_initialize() override;
 		DSTATUS disk_status() override;
 		DRESULT disk_read(BYTE* buff, LBA_t sector, UINT count) override;

@@ -29,6 +29,28 @@ rule("platform.qemu.run")
 			if v == "--debug" then
 				extra_args = extra_args .. " -s -S"
 			end
+		end
+
+		local cmd_prefix = "qemu-system-riscv32 -M virt -cpu rv32,zicond=true -nographic -bios none -m 2G -global virtio-mmio.force-legacy=false"
+		local bootloader_args = " -drive file=\"" .. target:targetfile() .. ".bin\",format=raw,if=pflash"
+		local run_str = cmd_prefix .. bootloader_args .. " " .. extra_args
+		os.exec(run_str)
+	end)
+
+rule_end()
+
+rule("platform.qemu.run.disk")
+
+	on_run(function(target)
+		local argv = import("core.base.option").get("arguments")
+
+		local extra_args = ""
+		local bin_path = ""
+
+		for _, v in ipairs(argv) do
+			if v == "--debug" then
+				extra_args = extra_args .. " -s -S"
+			end
 			if v:startswith("--bin=") then
 				bin_path = v:sub(6)
 			end
@@ -40,7 +62,7 @@ rule("platform.qemu.run")
 
 		local cmd_prefix = "qemu-system-riscv32 -M virt -cpu rv32,zicond=true -nographic -bios none -m 2G -global virtio-mmio.force-legacy=false"
 		local bootloader_args = " -drive file=\"" .. target:targetfile() .. ".bin\",format=raw,if=pflash"
-		local disk_args = " -device virtio-blk-device,drive=hd0 -drive file=" .. bin_path .. ",if=none,format=raw,id=hd0,media=disk,index=0,cache=none"
+		local disk_args = " -device virtio-blk-device,drive=hd0 -drive file=" .. bin_path .. ",if=none,format=raw,id=hd0,media=disk,index=0,cache=none,readonly=off"
 		local run_str = cmd_prefix .. bootloader_args .. disk_args .. " " .. extra_args
 		os.exec(run_str)
 	end)

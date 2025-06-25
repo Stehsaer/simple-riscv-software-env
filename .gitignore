@@ -16,3 +16,9 @@ build/*
 .xmake/*
 .archive/*
 .vscode
+
+# Target
+*.o
+*.a
+*.so
+*.out

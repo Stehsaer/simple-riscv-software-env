@@ -106,7 +106,7 @@ namespace device::virtio
 		static IO& at(uint8_t no) { return *(IO*)(0x10001000 + no * 4096); }
 	};
 
-	struct Queue_descriptor
+	struct alignas(16) Queue_descriptor
 	{
 		struct Flag
 		{
@@ -128,14 +128,14 @@ namespace device::virtio
 		}
 	};
 
-	struct Queue_avail_info
+	struct alignas(16) Queue_avail_info
 	{
 		uint16_t flags;
 		uint16_t idx;
 		uint16_t ring[8];
 	};
 
-	struct Queue_used_info
+	struct alignas(16) Queue_used_info
 	{
 		volatile uint16_t flags;
 		volatile uint16_t idx;
@@ -154,7 +154,7 @@ namespace device::virtio
 		Get_device_id = 8,
 	};
 
-	struct Block_request
+	struct alignas(16) Block_request
 	{
 		Request_type type;
 
@@ -228,6 +228,9 @@ namespace device::virtio
 
 		// Write sectors to the device. Returns false if the operation fails.
 		bool write_sectors(const uint8_t* buffer, size_t sector_begin, size_t sector_count);
+
+		// Flush device cache. Returns false if the operation fails.
+		bool flush();
 
 		// Wait for not busy
 		void wait() const

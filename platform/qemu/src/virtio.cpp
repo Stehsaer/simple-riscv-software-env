@@ -128,7 +128,7 @@ namespace device::virtio
 			for (uint32_t retry = 0; retry < max_retry_count; retry++)
 			{
 				Block_request request = Block_request::write(sector);
-				volatile uint8_t status;
+				alignas(32) volatile uint8_t status;
 
 				interface->descriptors[0].set_object(request);
 				interface->descriptors[0].flags = {.next = true, .write = false};
@@ -161,6 +161,45 @@ namespace device::virtio
 
 				break;
 			}
+		}
+
+		return true;
+	}
+
+	bool Block_device_interface::flush()
+	{
+		wait();
+
+		const auto queue_size = interface->size();
+		if (queue_size < 2) return false;
+
+		for (uint32_t retry = 0; retry < max_retry_count; retry++)
+		{
+			Block_request request = Block_request::flush();
+			volatile uint8_t status;
+
+			interface->descriptors[0].set_object(request);
+			interface->descriptors[0].flags = {.next = true, .write = false};
+			interface->descriptors[0].next = 1;
+
+			interface->descriptors[1].set_object(status);
+			interface->descriptors[1].len = 1;
+			interface->descriptors[1].flags = {.next = false, .write = true};
+
+			interface->push_descriptor(0);
+			io.notify_queue(0);
+
+			wait();
+
+			if (status != 0)
+			{
+				if (retry == max_retry_count - 1)
+					return false;
+				else
+					continue;
+			}
+
+			break;
 		}
 
 		return true;
