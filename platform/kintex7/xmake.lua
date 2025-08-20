@@ -3,6 +3,11 @@ target("platform.kintex7")
 	set_languages("c++23", {public=true})
 
 	add_files("src/*.cpp")
+
+	if is_mode("minsizerel") then
+		add_files("newlib-fix/ssputws_r.c")
+	end
+
 	add_deps("platform.common-headers", {public=true})
 	add_includedirs("include", {public=true})
 target_end()
