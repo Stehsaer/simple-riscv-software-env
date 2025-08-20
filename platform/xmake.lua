@@ -1,1 +1,1 @@
-includes("common", "kintex7", "qemu")
+includes("common", "kintex7")
